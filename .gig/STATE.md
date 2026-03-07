@@ -4,10 +4,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Version** | `0.1.5` |
-| **Phase** | 1 — Audio Visualizer Foundation |
-| **Status** | `GOVERNED` |
-| **Last Batch** | Wire pipeline & main window |
+| **Version** | `0.2.0` |
+| **Phase** | 2 — Audio Source Selection & Controls |
+| **Status** | `GATHERED` |
+| **Last Batch** | — |
 | **Last Updated** | 2026-03-06 |
 
 ---
@@ -31,7 +31,12 @@
 
 <!-- Decisions that affect current/upcoming work -->
 
-_None — phase 1 decisions archived to `phases/v0.1-audio-visualizer-foundation/`._
+- D-2.1: Device enumeration via AudioSystem.getMixerInfo() + filter
+- D-2.2: File input deferred to future phase
+- D-2.3: Bottom control bar, Row in Column, visualizer weight(1f)
+- D-2.4: Device dropdown, gain slider (0-5x), pause/resume toggle
+- D-2.5: Material 3 darkColorScheme(), blue-purple primary
+- D-2.6: AudioCapture.start(mixerInfo?), gain in bytesToFloats()
 
 ---
 
@@ -55,6 +60,10 @@ _None._
 - Gradle: `kotlin("jvm")` + `org.jetbrains.compose`, single module
 - Data flow: AudioCapture(StateFlow) → FFTProcessor(StateFlow) → SpectrumVisualizer(composable)
 - Threading: IO for audio read, Default for FFT, Main for UI
+- New files this phase: ui/Theme.kt, ui/ControlBar.kt
+- Device enum: AudioSystem.getMixerInfo() → filter TargetDataLine → mixer.getLine()
+- Gain: float multiplier in AudioCapture.bytesToFloats(), range 0-5x
+- Theme colors: primary=#7B61FF, surface=#1A1A1A, background=#0D0D0D
 
 ---
 
