@@ -4,10 +4,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Version** | `0.1.0` |
+| **Version** | `0.1.5` |
 | **Phase** | 1 — Audio Visualizer Foundation |
-| **Status** | `GATHERED` |
-| **Last Batch** | — |
+| **Status** | `GOVERNED` |
+| **Last Batch** | Wire pipeline & main window |
 | **Last Updated** | 2026-03-06 |
 
 ---
@@ -18,6 +18,11 @@
 
 | Version | Phase | Batch Title | Type | Status | Timestamp |
 |---------|-------|-------------|------|--------|-----------|
+| 0.1.5 | 1 | Wire pipeline & main window | PLANNED | done | 2026-03-06 |
+| 0.1.4 | 1 | Bar spectrum Canvas renderer | PLANNED | done | 2026-03-06 |
+| 0.1.3 | 1 | FFT processor with Hann windowing | PLANNED | done | 2026-03-06 |
+| 0.1.2 | 1 | Audio capture engine | PLANNED | done | 2026-03-06 |
+| 0.1.1 | 1 | Project scaffold & Gradle config | PLANNED | done | 2026-03-06 |
 | 0.0.1 | 0 | Project discovery & scaffold | PLANNED | done | 2026-03-06 |
 
 ---
@@ -26,13 +31,7 @@
 
 <!-- Decisions that affect current/upcoming work -->
 
-- D-1.1: kotlin("jvm") + Compose plugin, single-module
-- D-1.2: JTransforms for FFT
-- D-1.3: TargetDataLine, 44.1kHz, 16-bit PCM, mono
-- D-1.4: 1024-sample FFT + Hann window
-- D-1.5: IO → Default → Main via StateFlow
-- D-1.6: Bar spectrum with drawRect + withFrameMillis
-- D-1.7: Frequency→hue HSL color mapping
+_None — phase 1 decisions archived to `phases/v0.1-audio-visualizer-foundation/`._
 
 ---
 
