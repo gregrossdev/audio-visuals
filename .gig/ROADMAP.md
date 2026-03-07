@@ -4,15 +4,16 @@
 
 | Field | Value |
 |-------|-------|
-| **Name** | — |
-| **Version** | — |
-| **Status** | not started |
-| **Description** | — |
+| **Name** | Audio Visuals |
+| **Version** | `0.1.0` |
+| **Status** | in-progress |
+| **Description** | Initial project setup and foundation. |
 
 ## Phases
 
 | # | Name | Version Range | Status |
 |---|------|---------------|--------|
+| 1 | Audio Visualizer Foundation | v0.1.x | planned |
 <!-- Phases added by gig:plan, archived by gig:verify -->
 
 ## Completed Milestones
