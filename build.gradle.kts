@@ -13,6 +13,8 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
+    @Suppress("DEPRECATION")
+    implementation(compose.material3)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
     implementation("edu.emory.mathcs:JTransforms:2.4")
 }

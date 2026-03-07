@@ -1,15 +1,15 @@
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import audio.AudioCapture
 import audio.FFTProcessor
+import ui.AudioVisualsTheme
 import ui.SpectrumVisualizer
 
 fun main() = application {
@@ -42,11 +42,28 @@ fun App() {
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0D0D0D))
-    ) {
-        SpectrumVisualizer(magnitudes = magnitudes)
+    AudioVisualsTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                SpectrumVisualizer(magnitudes = magnitudes)
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                // Control bar — populated in batch 2.3
+            }
+        }
     }
 }
