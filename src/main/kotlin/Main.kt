@@ -10,7 +10,9 @@ import androidx.compose.ui.window.rememberWindowState
 import audio.AudioCapture
 import audio.FFTProcessor
 import ui.AudioVisualsTheme
+import ui.ControlBar
 import ui.SpectrumVisualizer
+import javax.sound.sampled.Mixer
 
 fun main() = application {
     Window(
@@ -30,7 +32,13 @@ fun App() {
 
     val magnitudes by fftProcessor.magnitudes.collectAsState()
 
+    var devices by remember { mutableStateOf(emptyList<Mixer.Info>()) }
+    var selectedDevice by remember { mutableStateOf<Mixer.Info?>(null) }
+    var gain by remember { mutableStateOf(1.0f) }
+    var isPaused by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
+        devices = AudioCapture.availableDevices()
         audioCapture.start(scope)
         fftProcessor.start(scope, audioCapture)
     }
@@ -56,14 +64,36 @@ fun App() {
                 SpectrumVisualizer(magnitudes = magnitudes)
             }
 
-            Row(
+            ControlBar(
+                devices = devices,
+                selectedDevice = selectedDevice,
+                onDeviceSelected = { device ->
+                    selectedDevice = device
+                    fftProcessor.stop()
+                    audioCapture.stop()
+                    audioCapture.gain = gain
+                    audioCapture.start(scope, device)
+                    fftProcessor.start(scope, audioCapture)
+                },
+                gain = gain,
+                onGainChange = { newGain ->
+                    gain = newGain
+                    audioCapture.gain = newGain
+                },
+                isPaused = isPaused,
+                onPauseToggle = {
+                    isPaused = !isPaused
+                    if (isPaused) {
+                        audioCapture.pause()
+                    } else {
+                        audioCapture.resume()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .background(MaterialTheme.colorScheme.surface)
-            ) {
-                // Control bar — populated in batch 2.3
-            }
+            )
         }
     }
 }
