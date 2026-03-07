@@ -14,7 +14,7 @@
 | # | Name | Version Range | Status |
 |---|------|---------------|--------|
 | 1 | Audio Visualizer Foundation | v0.1.1–v0.1.5 | complete |
-| 2 | Audio Source Selection & Controls | v0.2.x | planned |
+| 2 | Audio Source Selection & Controls | v0.2.1–v0.2.4 | complete |
 <!-- Phases added by gig:plan, archived by gig:verify -->
 
 ## Completed Milestones

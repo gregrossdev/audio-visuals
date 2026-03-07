@@ -4,10 +4,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Version** | `0.2.0` |
+| **Version** | `0.2.4` |
 | **Phase** | 2 — Audio Source Selection & Controls |
-| **Status** | `GATHERED` |
-| **Last Batch** | — |
+| **Status** | `GOVERNED` |
+| **Last Batch** | Wire controls to audio pipeline |
 | **Last Updated** | 2026-03-06 |
 
 ---
@@ -18,6 +18,10 @@
 
 | Version | Phase | Batch Title | Type | Status | Timestamp |
 |---------|-------|-------------|------|--------|-----------|
+| 0.2.4 | 2 | Wire controls to audio pipeline | PLANNED | done | 2026-03-06 |
+| 0.2.3 | 2 | Device dropdown, gain slider & pause toggle | PLANNED | done | 2026-03-06 |
+| 0.2.2 | 2 | Dark theme & control bar layout | PLANNED | done | 2026-03-06 |
+| 0.2.1 | 2 | Refactor AudioCapture for device selection & gain | PLANNED | done | 2026-03-06 |
 | 0.1.5 | 1 | Wire pipeline & main window | PLANNED | done | 2026-03-06 |
 | 0.1.4 | 1 | Bar spectrum Canvas renderer | PLANNED | done | 2026-03-06 |
 | 0.1.3 | 1 | FFT processor with Hann windowing | PLANNED | done | 2026-03-06 |
@@ -31,12 +35,7 @@
 
 <!-- Decisions that affect current/upcoming work -->
 
-- D-2.1: Device enumeration via AudioSystem.getMixerInfo() + filter
-- D-2.2: File input deferred to future phase
-- D-2.3: Bottom control bar, Row in Column, visualizer weight(1f)
-- D-2.4: Device dropdown, gain slider (0-5x), pause/resume toggle
-- D-2.5: Material 3 darkColorScheme(), blue-purple primary
-- D-2.6: AudioCapture.start(mixerInfo?), gain in bytesToFloats()
+_None — phase 2 decisions archived to `phases/v0.2-audio-source-controls/`._
 
 ---
 

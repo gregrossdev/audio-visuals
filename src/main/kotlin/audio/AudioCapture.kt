@@ -25,11 +25,18 @@ class AudioCapture(
     private val _samples = MutableStateFlow(FloatArray(sampleSize))
     val samples: StateFlow<FloatArray> = _samples.asStateFlow()
 
+    var gain: Float = 1.0f
+
     private var line: TargetDataLine? = null
     private var captureJob: Job? = null
 
-    fun start(scope: CoroutineScope) {
-        val dataLine = AudioSystem.getLine(DataLine.Info(TargetDataLine::class.java, format)) as TargetDataLine
+    fun start(scope: CoroutineScope, mixerInfo: Mixer.Info? = null) {
+        val info = DataLine.Info(TargetDataLine::class.java, format)
+        val dataLine = if (mixerInfo != null) {
+            AudioSystem.getMixer(mixerInfo).getLine(info) as TargetDataLine
+        } else {
+            AudioSystem.getLine(info) as TargetDataLine
+        }
         val bufferBytes = sampleSize * 2 // 16-bit = 2 bytes per sample
         dataLine.open(format, bufferBytes * 2)
         dataLine.start()
@@ -54,15 +61,38 @@ class AudioCapture(
         line = null
     }
 
+    fun pause() {
+        line?.stop()
+    }
+
+    fun resume() {
+        line?.start()
+    }
+
     private fun bytesToFloats(bytes: ByteArray, length: Int): FloatArray {
         val shortBuffer = ByteBuffer.wrap(bytes, 0, length)
             .order(ByteOrder.LITTLE_ENDIAN)
             .asShortBuffer()
         val sampleCount = length / 2
+        val currentGain = gain
         val floats = FloatArray(sampleCount)
         for (i in 0 until sampleCount) {
-            floats[i] = shortBuffer.get(i) / 32768f
+            floats[i] = (shortBuffer.get(i) / 32768f * currentGain).coerceIn(-1f, 1f)
         }
         return floats
+    }
+
+    companion object {
+        fun availableDevices(): List<Mixer.Info> {
+            val targetInfo = DataLine.Info(TargetDataLine::class.java, null)
+            return AudioSystem.getMixerInfo().filter { mixerInfo ->
+                try {
+                    val mixer = AudioSystem.getMixer(mixerInfo)
+                    mixer.targetLineInfo.any { it is DataLine.Info && it.lineClass == TargetDataLine::class.java }
+                } catch (_: Exception) {
+                    false
+                }
+            }
+        }
     }
 }

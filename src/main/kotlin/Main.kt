@@ -1,16 +1,18 @@
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import audio.AudioCapture
 import audio.FFTProcessor
+import ui.AudioVisualsTheme
+import ui.ControlBar
 import ui.SpectrumVisualizer
+import javax.sound.sampled.Mixer
 
 fun main() = application {
     Window(
@@ -30,7 +32,13 @@ fun App() {
 
     val magnitudes by fftProcessor.magnitudes.collectAsState()
 
+    var devices by remember { mutableStateOf(emptyList<Mixer.Info>()) }
+    var selectedDevice by remember { mutableStateOf<Mixer.Info?>(null) }
+    var gain by remember { mutableStateOf(1.0f) }
+    var isPaused by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
+        devices = AudioCapture.availableDevices()
         audioCapture.start(scope)
         fftProcessor.start(scope, audioCapture)
     }
@@ -42,11 +50,50 @@ fun App() {
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0D0D0D))
-    ) {
-        SpectrumVisualizer(magnitudes = magnitudes)
+    AudioVisualsTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                SpectrumVisualizer(magnitudes = magnitudes)
+            }
+
+            ControlBar(
+                devices = devices,
+                selectedDevice = selectedDevice,
+                onDeviceSelected = { device ->
+                    selectedDevice = device
+                    fftProcessor.stop()
+                    audioCapture.stop()
+                    audioCapture.gain = gain
+                    audioCapture.start(scope, device)
+                    fftProcessor.start(scope, audioCapture)
+                },
+                gain = gain,
+                onGainChange = { newGain ->
+                    gain = newGain
+                    audioCapture.gain = newGain
+                },
+                isPaused = isPaused,
+                onPauseToggle = {
+                    isPaused = !isPaused
+                    if (isPaused) {
+                        audioCapture.pause()
+                    } else {
+                        audioCapture.resume()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+            )
+        }
     }
 }
