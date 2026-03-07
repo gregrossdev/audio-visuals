@@ -13,7 +13,7 @@
 
 | # | Name | Version Range | Status |
 |---|------|---------------|--------|
-| 1 | Audio Visualizer Foundation | v0.1.x | planned |
+| 1 | Audio Visualizer Foundation | v0.1.1–v0.1.5 | complete |
 <!-- Phases added by gig:plan, archived by gig:verify -->
 
 ## Completed Milestones
