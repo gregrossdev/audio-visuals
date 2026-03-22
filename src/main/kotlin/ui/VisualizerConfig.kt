@@ -129,3 +129,22 @@ data class TerrainConfig(
     val fogEnd: Float = 1.0f,
     override val label: String = "Terrain"
 ) : VisualizerConfig()
+
+@Serializable
+enum class CurveMode(val label: String) {
+    LISSAJOUS("Lissajous"),
+    ROSE("Rose"),
+    SPIROGRAPH("Spirograph")
+}
+
+@Serializable
+@SerialName("curves")
+data class CurvesConfig(
+    val curveMode: CurveMode = CurveMode.LISSAJOUS,
+    val pointCount: Int = 3000,
+    val lineWidth: Float = 1.5f,
+    val trailAlpha: Float = 0.05f,
+    val speedMultiplier: Float = 1.0f,
+    val colorCycleSpeed: Float = 0.5f,
+    override val label: String = "Curves"
+) : VisualizerConfig()
