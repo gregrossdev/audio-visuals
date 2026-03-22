@@ -82,6 +82,22 @@ fun App(window: java.awt.Window, windowState: WindowState) {
         screenshotStatus = if (path != null) "Saved: $path" else "Screenshot failed"
     }
 
+    // Screen recording
+    val recorder = remember { ScreenRecorder() }
+    var isRecording by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    val doRecordToggle = {
+        if (!isRecording) {
+            recorder.start(window, scope)
+            isRecording = true
+        } else {
+            val path = recorder.stop()
+            isRecording = false
+            screenshotStatus = if (path != null) "Saved: $path" else "Recording failed"
+        }
+    }
+
     val audioCapture = remember { AudioCapture() }
     val fileSource = remember { FileAudioSource() }
     val fftProcessor = remember { FFTProcessor() }
@@ -93,7 +109,6 @@ fun App(window: java.awt.Window, windowState: WindowState) {
     val centroidTracker = remember { SpectralCentroidTracker() }
     val onsetDetector = remember { OnsetDetector() }
     val energyEnvelope = remember { EnergyEnvelope() }
-    val scope = rememberCoroutineScope()
 
     val rawMagnitudes by fftProcessor.magnitudes.collectAsState()
     val rawLogMagnitudes by fftProcessor.logMagnitudes.collectAsState()
@@ -242,6 +257,12 @@ fun App(window: java.awt.Window, windowState: WindowState) {
                         }
                         Key.L -> {
                             logScale = !logScale
+                            true
+                        }
+                        Key.R -> {
+                            if (recorder.isAvailable()) {
+                                doRecordToggle()
+                            }
                             true
                         }
                         Key.One, Key.Two, Key.Three, Key.Four, Key.Five,
@@ -421,6 +442,9 @@ fun App(window: java.awt.Window, windowState: WindowState) {
                         if (isPaused) activeSource.pause() else activeSource.resume()
                     },
                     onScreenshot = { doScreenshot() },
+                    isRecording = isRecording,
+                    onRecordToggle = { doRecordToggle() },
+                    recordingEnabled = recorder.isAvailable(),
                     settingsOpen = settingsPanelOpen,
                     onSettingsToggle = { settingsPanelOpen = !settingsPanelOpen },
                     modifier = Modifier
