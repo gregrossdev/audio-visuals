@@ -190,38 +190,37 @@ fun App(window: java.awt.Window) {
                 }
 
                 // Settings panel overlay
-                if (settingsPanelOpen) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.TopEnd
-                    ) {
-                        SettingsPanel(
-                            layers = layers,
-                            selectedLayerId = selectedLayerId,
-                            onLayersChanged = { layers = it },
-                            onSelectedLayerChanged = { selectedLayerId = it },
-                            reactivity = reactivityConfig,
-                            onReactivityChanged = { reactivityConfig = it },
-                            presetNames = presetNames,
-                            onSavePreset = { name ->
-                                PresetManager.save(Preset(name, layers, themePreset, reactivityConfig))
-                                presetNames = PresetManager.list()
-                            },
-                            onLoadPreset = { name ->
-                                val preset = PresetManager.load(name)
-                                if (preset != null) {
-                                    layers = preset.layers
-                                    themePreset = preset.themePreset
-                                    reactivityConfig = preset.reactivity
-                                    selectedLayerId = preset.layers.firstOrNull()?.id ?: ""
-                                }
-                            },
-                            onDeletePreset = { name ->
-                                PresetManager.delete(name)
-                                presetNames = PresetManager.list()
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    SettingsPanel(
+                        layers = layers,
+                        selectedLayerId = selectedLayerId,
+                        onLayersChanged = { layers = it },
+                        onSelectedLayerChanged = { selectedLayerId = it },
+                        reactivity = reactivityConfig,
+                        onReactivityChanged = { reactivityConfig = it },
+                        presetNames = presetNames,
+                        onSavePreset = { name ->
+                            PresetManager.save(Preset(name, layers, themePreset, reactivityConfig))
+                            presetNames = PresetManager.list()
+                        },
+                        onLoadPreset = { name ->
+                            val preset = PresetManager.load(name)
+                            if (preset != null) {
+                                layers = preset.layers
+                                themePreset = preset.themePreset
+                                reactivityConfig = preset.reactivity
+                                selectedLayerId = preset.layers.firstOrNull()?.id ?: ""
                             }
-                        )
-                    }
+                        },
+                        onDeletePreset = { name ->
+                            PresetManager.delete(name)
+                            presetNames = PresetManager.list()
+                        },
+                        isVisible = settingsPanelOpen
+                    )
                 }
 
                 // Screenshot status overlay

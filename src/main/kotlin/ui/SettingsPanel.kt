@@ -1,9 +1,12 @@
 package ui
 
 import audio.ReactivityConfig
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,16 +28,24 @@ fun SettingsPanel(
     onSavePreset: (String) -> Unit,
     onLoadPreset: (String) -> Unit,
     onDeletePreset: (String) -> Unit,
+    isVisible: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
     val selectedLayer = layers.find { it.id == selectedLayerId }
+    val panelShape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
 
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+        exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+    ) {
     Column(
         modifier = modifier
             .width(280.dp)
             .fillMaxHeight()
-            .background(Color(0xDD1A1A1A))
+            .background(Color(0xFF1A1A1A).copy(alpha = 0.75f), panelShape)
+            .border(1.dp, Color.White.copy(alpha = 0.08f), panelShape)
             .padding(16.dp)
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -102,6 +113,7 @@ fun SettingsPanel(
             },
             modifier = Modifier.fillMaxWidth().height(32.dp),
             contentPadding = PaddingValues(horizontal = 10.dp),
+            enabled = layers.size < 5,
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = MaterialTheme.colorScheme.primary
             )
@@ -225,6 +237,7 @@ fun SettingsPanel(
         LabeledSlider("Energy Smooth", reactivity.energySmoothing, 0.05f, 0.5f) {
             onReactivityChanged(reactivity.copy(energySmoothing = it))
         }
+    }
     }
 }
 
