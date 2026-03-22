@@ -4,10 +4,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Version** | `0.14.2` |
-| **Iteration** | 14 — Screenshot Capture |
+| **Version** | `0.15.4` |
+| **Iteration** | 15 — UI/UX Overhaul |
 | **Status** | `GOVERNED` |
-| **Last Batch** | Gitignore update |
+| **Last Batch** | Keyboard shortcuts + fullscreen |
 | **Last Updated** | 2026-03-22 |
 
 ---
@@ -18,6 +18,10 @@
 
 | Version | Iteration | Batch Title | Type | Status | Timestamp |
 |---------|-------|-------------|------|--------|-----------|
+| 0.15.4 | 15 | Keyboard shortcuts + fullscreen | PLANNED | done | 2026-03-22 |
+| 0.15.3 | 15 | Auto-hide control bar | PLANNED | done | 2026-03-22 |
+| 0.15.2 | 15 | Settings panel + layer cap | PLANNED | done | 2026-03-22 |
+| 0.15.1 | 15 | Control bar redesign | PLANNED | done | 2026-03-22 |
 | 0.14.2 | 14 | Gitignore update | PLANNED | done | 2026-03-22 |
 | 0.14.1 | 14 | Screenshot capture feature | PLANNED | done | 2026-03-22 |
 | 0.13.3 | 13 | Wire into Main + Settings | PLANNED | done | 2026-03-22 |
@@ -93,7 +97,7 @@
 
 <!-- Decisions that affect current/upcoming work -->
 
-_None — iteration 14 archived._
+_None — iteration 15 archived._
 
 ---
 

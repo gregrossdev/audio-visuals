@@ -27,15 +27,16 @@
 | 12 | 3D Wireframe Terrain | v0.12.1–v0.12.3 | complete |
 | 13 | Mathematical Curves | v0.13.1–v0.13.3 | complete |
 | 14 | Screenshot Capture | v0.14.1–v0.14.2 | complete |
+| 15 | UI/UX Overhaul | v0.15.1–v0.15.4 | complete |
 <!-- Phases added by gig:plan, archived by gig:verify -->
 
 ## Upcoming Iterations
 
 | # | Name | Description |
 |---|------|-------------|
-| 14 | Fractal Tree Visualizer | Recursive branching trees that bloom on beat |
-| 15 | Terrain Tuning & Polish | Fine-tune terrain reactivity, improve depth perception |
-| 16 | Particle Text & Image Scatter | Text-to-particles with shatter/reform on beat |
+| 15 | Recording & Export | Capture video/GIF output of visualizations for sharing |
+| 16 | Fractal Tree Visualizer | Recursive branching trees that bloom and sway on beat |
+| 17 | Performance & Polish | Layer cap enforcement (ISS-1), frame rate optimization, UI refinements |
 
 ## Completed Milestones
 
