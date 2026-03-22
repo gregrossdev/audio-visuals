@@ -28,15 +28,15 @@
 | 13 | Mathematical Curves | v0.13.1–v0.13.3 | complete |
 | 14 | Screenshot Capture | v0.14.1–v0.14.2 | complete |
 | 15 | UI/UX Overhaul | v0.15.1–v0.15.4 | complete |
+| 16 | Layer UX Improvements | v0.16.1 | complete |
 <!-- Phases added by gig:plan, archived by gig:verify -->
 
 ## Upcoming Iterations
 
 | # | Name | Description |
 |---|------|-------------|
-| 15 | Recording & Export | Capture video/GIF output of visualizations for sharing |
-| 16 | Fractal Tree Visualizer | Recursive branching trees that bloom and sway on beat |
-| 17 | Performance & Polish | Layer cap enforcement (ISS-1), frame rate optimization, UI refinements |
+| 17 | Recording & Export | Capture video/GIF output of visualizations for sharing |
+| 18 | Fractal Tree Visualizer | Recursive branching trees that bloom and sway on beat |
 
 ## Completed Milestones
 

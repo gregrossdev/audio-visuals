@@ -4,10 +4,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Version** | `0.15.4` |
-| **Iteration** | 15 — UI/UX Overhaul |
+| **Version** | `0.16.1` |
+| **Iteration** | 16 — Layer UX Improvements |
 | **Status** | `GOVERNED` |
-| **Last Batch** | Keyboard shortcuts + fullscreen |
+| **Last Batch** | Layer name mode picker |
 | **Last Updated** | 2026-03-22 |
 
 ---
@@ -18,6 +18,7 @@
 
 | Version | Iteration | Batch Title | Type | Status | Timestamp |
 |---------|-------|-------------|------|--------|-----------|
+| 0.16.1 | 16 | Layer name mode picker | PLANNED | done | 2026-03-22 |
 | 0.15.4 | 15 | Keyboard shortcuts + fullscreen | PLANNED | done | 2026-03-22 |
 | 0.15.3 | 15 | Auto-hide control bar | PLANNED | done | 2026-03-22 |
 | 0.15.2 | 15 | Settings panel + layer cap | PLANNED | done | 2026-03-22 |
@@ -97,7 +98,7 @@
 
 <!-- Decisions that affect current/upcoming work -->
 
-_None — iteration 15 archived._
+_None — iteration 16 archived._
 
 ---
 
