@@ -318,6 +318,13 @@ fun LayerRenderer(
                 config = layer.config as? MandalaConfig ?: MandalaConfig(),
                 audioFeatures = audioFeatures
             )
+            VisualizationMode.FLOW_FIELD -> FlowFieldVisualizer(
+                magnitudes = magnitudes,
+                theme = theme,
+                isBeat = isBeat,
+                config = layer.config as? FlowFieldConfig ?: FlowFieldConfig(),
+                audioFeatures = audioFeatures
+            )
         }
     }
 }

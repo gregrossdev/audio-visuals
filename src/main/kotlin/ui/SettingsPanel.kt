@@ -323,6 +323,7 @@ private fun LayerConfigSection(layer: VisualizerLayer, onConfigChanged: (Visuali
         is KaleidoscopeConfig -> KaleidoscopeSettings(config) { onConfigChanged(it) }
         is TrailsConfig -> TrailsSettings(config) { onConfigChanged(it) }
         is MandalaConfig -> MandalaSettings(config) { onConfigChanged(it) }
+        is FlowFieldConfig -> FlowFieldSettings(config) { onConfigChanged(it) }
         else -> {
             Text(
                 "No configurable parameters for this visualizer.",
@@ -341,6 +342,7 @@ fun defaultConfigForMode(mode: VisualizationMode): VisualizerConfig = when (mode
     VisualizationMode.KALEIDOSCOPE -> KaleidoscopeConfig()
     VisualizationMode.TRAILS -> TrailsConfig()
     VisualizationMode.MANDALA -> MandalaConfig()
+    VisualizationMode.FLOW_FIELD -> FlowFieldConfig()
 }
 
 @Composable
@@ -571,6 +573,38 @@ private fun MandalaSettings(config: MandalaConfig, onChange: (MandalaConfig) -> 
                 checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
             )
         )
+    }
+}
+
+@Composable
+private fun FlowFieldSettings(config: FlowFieldConfig, onChange: (FlowFieldConfig) -> Unit) {
+    SectionHeader("Flow Field")
+    LabeledSlider("Particles", config.particleCount.toFloat(), 500f, 5000f, isInt = true) {
+        onChange(config.copy(particleCount = it.toInt()))
+    }
+    LabeledSlider("Noise Scale", config.noiseScale, 0.001f, 0.01f) {
+        onChange(config.copy(noiseScale = it))
+    }
+    LabeledSlider("Field Speed", config.fieldSpeed, 0.001f, 0.05f) {
+        onChange(config.copy(fieldSpeed = it))
+    }
+    LabeledSlider("Drag", config.particleDrag, 0.9f, 0.999f) {
+        onChange(config.copy(particleDrag = it))
+    }
+    LabeledSlider("Speed", config.particleSpeed, 0.5f, 5.0f) {
+        onChange(config.copy(particleSpeed = it))
+    }
+    LabeledSlider("Trail Length", config.trailLength.toFloat(), 1f, 15f, isInt = true) {
+        onChange(config.copy(trailLength = it.toInt()))
+    }
+    LabeledSlider("Beat Jump", config.beatTimeJump, 0.5f, 5.0f) {
+        onChange(config.copy(beatTimeJump = it))
+    }
+    LabeledSlider("Turb. Min", config.turbulenceMin, 0.0005f, 0.005f) {
+        onChange(config.copy(turbulenceMin = it))
+    }
+    LabeledSlider("Turb. Max", config.turbulenceMax, 0.002f, 0.02f) {
+        onChange(config.copy(turbulenceMax = it))
     }
 }
 
