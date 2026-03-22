@@ -18,6 +18,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import audio.*
@@ -34,13 +36,14 @@ import javax.swing.filechooser.FileNameExtensionFilter
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
+    val windowState = rememberWindowState(width = 1024.dp, height = 600.dp)
     Window(
         onCloseRequest = ::exitApplication,
         title = "Audio Visuals",
-        state = rememberWindowState(width = 1024.dp, height = 600.dp),
+        state = windowState,
         onKeyEvent = { false }
     ) {
-        App(window)
+        App(window, windowState)
     }
 }
 
@@ -63,7 +66,7 @@ fun takeScreenshot(window: java.awt.Window): String? {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun App(window: java.awt.Window) {
+fun App(window: java.awt.Window, windowState: WindowState) {
     var screenshotStatus by remember { mutableStateOf<String?>(null) }
 
     // Clear screenshot status after 3 seconds
@@ -192,13 +195,76 @@ fun App(window: java.awt.Window) {
                     }
                 }
                 .onKeyEvent { event ->
-                    if (event.type == KeyEventType.KeyDown &&
-                        event.key == Key.S &&
-                        event.isMetaPressed
-                    ) {
+                    if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+
+                    // Cmd+S — screenshot (modifier shortcut)
+                    if (event.key == Key.S && event.isMetaPressed) {
                         doScreenshot()
-                        true
-                    } else false
+                        return@onKeyEvent true
+                    }
+
+                    // Skip shortcuts when modifier keys are held (except above)
+                    if (event.isMetaPressed || event.isCtrlPressed || event.isAltPressed) {
+                        return@onKeyEvent false
+                    }
+
+                    when (event.key) {
+                        Key.Spacebar -> {
+                            isPaused = !isPaused
+                            if (isPaused) activeSource.pause() else activeSource.resume()
+                            true
+                        }
+                        Key.Tab -> {
+                            settingsPanelOpen = !settingsPanelOpen
+                            true
+                        }
+                        Key.F -> {
+                            windowState.placement = if (windowState.placement == WindowPlacement.Fullscreen)
+                                WindowPlacement.Floating else WindowPlacement.Fullscreen
+                            true
+                        }
+                        Key.F11 -> {
+                            windowState.placement = if (windowState.placement == WindowPlacement.Fullscreen)
+                                WindowPlacement.Floating else WindowPlacement.Fullscreen
+                            true
+                        }
+                        Key.Escape -> {
+                            if (windowState.placement == WindowPlacement.Fullscreen) {
+                                windowState.placement = WindowPlacement.Floating
+                                true
+                            } else false
+                        }
+                        Key.T -> {
+                            themePreset = ThemePreset.entries[
+                                (themePreset.ordinal + 1) % ThemePreset.entries.size
+                            ]
+                            true
+                        }
+                        Key.L -> {
+                            logScale = !logScale
+                            true
+                        }
+                        Key.One, Key.Two, Key.Three, Key.Four, Key.Five,
+                        Key.Six, Key.Seven, Key.Eight, Key.Nine, Key.Zero -> {
+                            val index = when (event.key) {
+                                Key.One -> 0; Key.Two -> 1; Key.Three -> 2
+                                Key.Four -> 3; Key.Five -> 4; Key.Six -> 5
+                                Key.Seven -> 6; Key.Eight -> 7; Key.Nine -> 8
+                                Key.Zero -> 9; else -> -1
+                            }
+                            if (index in presetNames.indices) {
+                                val preset = PresetManager.load(presetNames[index])
+                                if (preset != null) {
+                                    layers = preset.layers.take(5)
+                                    themePreset = preset.themePreset
+                                    reactivityConfig = preset.reactivity
+                                    selectedLayerId = preset.layers.firstOrNull()?.id ?: ""
+                                }
+                            }
+                            true
+                        }
+                        else -> false
+                    }
                 }
         ) {
             val activeTheme = themePreset.theme
