@@ -339,6 +339,53 @@ fun App(window: java.awt.Window, windowState: WindowState) {
                 )
             }
 
+            // Recording indicator overlay (top-left)
+            if (isRecording) {
+                val pulseAlpha by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (isRecording) 1f else 0f,
+                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                        animation = androidx.compose.animation.core.tween(800),
+                        repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                    )
+                )
+                var elapsedSeconds by remember { mutableStateOf(0) }
+                LaunchedEffect(isRecording) {
+                    while (isRecording) {
+                        elapsedSeconds = recorder.elapsedSeconds
+                        kotlinx.coroutines.delay(500)
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 12.dp),
+                    contentAlignment = Alignment.TopStart
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .background(
+                                Color.Black.copy(alpha = 0.7f),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Pulsing red dot
+                        androidx.compose.foundation.Canvas(modifier = Modifier.size(8.dp)) {
+                            drawCircle(
+                                color = Color.Red.copy(alpha = pulseAlpha.coerceIn(0.4f, 1f)),
+                                radius = size.width / 2
+                            )
+                        }
+                        Text(
+                            text = "REC ${elapsedSeconds / 60}:%02d".format(elapsedSeconds % 60),
+                            fontSize = 12.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+
             // Screenshot status overlay
             if (screenshotStatus != null) {
                 Box(
