@@ -324,6 +324,7 @@ private fun LayerConfigSection(layer: VisualizerLayer, onConfigChanged: (Visuali
         is TrailsConfig -> TrailsSettings(config) { onConfigChanged(it) }
         is MandalaConfig -> MandalaSettings(config) { onConfigChanged(it) }
         is FlowFieldConfig -> FlowFieldSettings(config) { onConfigChanged(it) }
+        is TerrainConfig -> TerrainSettings(config) { onConfigChanged(it) }
         else -> {
             Text(
                 "No configurable parameters for this visualizer.",
@@ -343,6 +344,7 @@ fun defaultConfigForMode(mode: VisualizationMode): VisualizerConfig = when (mode
     VisualizationMode.TRAILS -> TrailsConfig()
     VisualizationMode.MANDALA -> MandalaConfig()
     VisualizationMode.FLOW_FIELD -> FlowFieldConfig()
+    VisualizationMode.TERRAIN -> TerrainConfig()
 }
 
 @Composable
@@ -605,6 +607,38 @@ private fun FlowFieldSettings(config: FlowFieldConfig, onChange: (FlowFieldConfi
     }
     LabeledSlider("Turb. Max", config.turbulenceMax, 0.002f, 0.02f) {
         onChange(config.copy(turbulenceMax = it))
+    }
+}
+
+@Composable
+private fun TerrainSettings(config: TerrainConfig, onChange: (TerrainConfig) -> Unit) {
+    SectionHeader("Terrain")
+    LabeledSlider("Columns", config.gridCols.toFloat(), 10f, 80f, isInt = true) {
+        onChange(config.copy(gridCols = it.toInt()))
+    }
+    LabeledSlider("Rows", config.gridRows.toFloat(), 10f, 60f, isInt = true) {
+        onChange(config.copy(gridRows = it.toInt()))
+    }
+    LabeledSlider("Height", config.heightScale, 50f, 300f) {
+        onChange(config.copy(heightScale = it))
+    }
+    LabeledSlider("Noise Scale", config.noiseScale, 0.01f, 0.15f) {
+        onChange(config.copy(noiseScale = it))
+    }
+    LabeledSlider("Scroll Speed", config.scrollSpeed, 0.005f, 0.08f) {
+        onChange(config.copy(scrollSpeed = it))
+    }
+    LabeledSlider("Focal Length", config.focalLength, 100f, 800f) {
+        onChange(config.copy(focalLength = it))
+    }
+    LabeledSlider("Camera Tilt", config.cameraTilt, 0.1f, 1.5f) {
+        onChange(config.copy(cameraTilt = it))
+    }
+    LabeledSlider("Fog Start", config.fogStart, 0f, 0.8f) {
+        onChange(config.copy(fogStart = it))
+    }
+    LabeledSlider("Fog End", config.fogEnd, 0.3f, 1.0f) {
+        onChange(config.copy(fogEnd = it))
     }
 }
 

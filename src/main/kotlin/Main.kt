@@ -325,6 +325,13 @@ fun LayerRenderer(
                 config = layer.config as? FlowFieldConfig ?: FlowFieldConfig(),
                 audioFeatures = audioFeatures
             )
+            VisualizationMode.TERRAIN -> TerrainVisualizer(
+                magnitudes = magnitudes,
+                theme = theme,
+                isBeat = isBeat,
+                config = layer.config as? TerrainConfig ?: TerrainConfig(),
+                audioFeatures = audioFeatures
+            )
         }
     }
 }
