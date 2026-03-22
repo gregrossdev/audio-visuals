@@ -42,6 +42,9 @@ fun ControlBar(
     isPaused: Boolean,
     onPauseToggle: () -> Unit,
     onScreenshot: () -> Unit = {},
+    isRecording: Boolean = false,
+    onRecordToggle: () -> Unit = {},
+    recordingEnabled: Boolean = true,
     settingsOpen: Boolean = false,
     onSettingsToggle: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -141,6 +144,19 @@ fun ControlBar(
                 CameraIcon(color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
+            // Record button
+            IconButton(
+                onClick = onRecordToggle,
+                enabled = recordingEnabled
+            ) {
+                RecordIcon(
+                    isRecording = isRecording,
+                    color = if (isRecording) Color.Red
+                    else if (recordingEnabled) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                )
+            }
+
             // Settings gear toggle
             IconButton(onClick = onSettingsToggle) {
                 GearIcon(
@@ -162,6 +178,34 @@ fun ControlBar(
 }
 
 // ── Canvas-drawn icons ──────────────────────────────────────────────────────
+
+@Composable
+private fun RecordIcon(isRecording: Boolean, color: Color) {
+    Canvas(modifier = Modifier.size(18.dp)) {
+        val w = size.width
+        val h = size.height
+        val cx = w / 2
+        val cy = h / 2
+
+        if (isRecording) {
+            // Stop: filled rounded square
+            val squareSize = w * 0.45f
+            drawRoundRect(
+                color = color,
+                topLeft = Offset(cx - squareSize / 2, cy - squareSize / 2),
+                size = Size(squareSize, squareSize),
+                cornerRadius = CornerRadius(w * 0.06f)
+            )
+        } else {
+            // Record: filled circle
+            drawCircle(
+                color = color,
+                radius = w * 0.3f,
+                center = Offset(cx, cy)
+            )
+        }
+    }
+}
 
 @Composable
 private fun CameraIcon(color: Color) {
