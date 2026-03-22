@@ -99,3 +99,18 @@ enum class MandalaShape(val label: String) {
     TRIANGLE("Triangle"),
     LINE("Line")
 }
+
+@Serializable
+@SerialName("flow_field")
+data class FlowFieldConfig(
+    val particleCount: Int = 3000,
+    val noiseScale: Float = 0.003f,
+    val fieldSpeed: Float = 0.01f,
+    val particleDrag: Float = 0.98f,
+    val particleSpeed: Float = 2.0f,
+    val trailLength: Int = 5,
+    val beatTimeJump: Float = 2.0f,
+    val turbulenceMin: Float = 0.001f,
+    val turbulenceMax: Float = 0.008f,
+    override val label: String = "Flow Field"
+) : VisualizerConfig()
