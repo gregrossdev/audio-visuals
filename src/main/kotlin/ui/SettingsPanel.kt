@@ -75,6 +75,13 @@ fun SettingsPanel(
                 canMoveUp = index > 0,
                 canMoveDown = index < layers.size - 1,
                 onSelect = { onSelectedLayerChanged(layer.id) },
+                onModeChanged = { mode ->
+                    val newConfig = defaultConfigForMode(mode)
+                    onLayersChanged(layers.map {
+                        if (it.id == layer.id) it.copy(vizMode = mode, config = newConfig) else it
+                    })
+                    onSelectedLayerChanged(layer.id)
+                },
                 onToggleEnabled = {
                     onLayersChanged(layers.map {
                         if (it.id == layer.id) it.copy(enabled = !it.enabled) else it
@@ -125,40 +132,7 @@ fun SettingsPanel(
 
         // Selected layer settings
         if (selectedLayer != null) {
-            SectionHeader("Layer: ${selectedLayer.vizMode.name.lowercase().replaceFirstChar { it.uppercase() }}")
-
-            // Visualization mode dropdown
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Mode", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-                var expanded by remember { mutableStateOf(false) }
-                Box {
-                    FilledTonalButton(
-                        onClick = { expanded = true },
-                        contentPadding = PaddingValues(horizontal = 10.dp),
-                        modifier = Modifier.height(28.dp)
-                    ) {
-                        Text(selectedLayer.vizMode.name.lowercase().replaceFirstChar { it.uppercase() }, fontSize = 11.sp)
-                    }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        VisualizationMode.entries.forEach { mode ->
-                            DropdownMenuItem(
-                                text = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }, fontSize = 12.sp) },
-                                onClick = {
-                                    val newConfig = defaultConfigForMode(mode)
-                                    onLayersChanged(layers.map {
-                                        if (it.id == selectedLayerId) it.copy(vizMode = mode, config = newConfig) else it
-                                    })
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
+            SectionHeader("Selected Layer")
 
             // Opacity slider
             LabeledSlider("Opacity", selectedLayer.opacity, 0f, 1f) { newOpacity ->
@@ -250,6 +224,7 @@ private fun LayerRow(
     canMoveDown: Boolean,
     onSelect: () -> Unit,
     onToggleEnabled: () -> Unit,
+    onModeChanged: (VisualizationMode) -> Unit,
     onDelete: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit
@@ -275,18 +250,52 @@ private fun LayerRow(
             )
         )
 
-        // Layer name — clickable to select
-        TextButton(
-            onClick = onSelect,
-            contentPadding = PaddingValues(horizontal = 4.dp),
-            modifier = Modifier.weight(1f).height(28.dp)
-        ) {
-            Text(
-                layer.vizMode.name.lowercase().replaceFirstChar { it.uppercase() },
-                fontSize = 11.sp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary
-                else Color.White.copy(alpha = 0.7f)
-            )
+        // Layer name — click to select + pick visualization mode
+        Box(modifier = Modifier.weight(1f)) {
+            var modeExpanded by remember { mutableStateOf(false) }
+            TextButton(
+                onClick = {
+                    onSelect()
+                    modeExpanded = true
+                },
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                modifier = Modifier.fillMaxWidth().height(28.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        layer.vizMode.name.lowercase().replaceFirstChar { it.uppercase() },
+                        fontSize = 11.sp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                        else Color.White.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        "\u25BE",
+                        fontSize = 8.sp,
+                        color = Color.White.copy(alpha = 0.4f)
+                    )
+                }
+            }
+            DropdownMenu(expanded = modeExpanded, onDismissRequest = { modeExpanded = false }) {
+                VisualizationMode.entries.forEach { mode ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                mode.name.lowercase().replaceFirstChar { it.uppercase() },
+                                fontSize = 12.sp,
+                                color = if (mode == layer.vizMode) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        onClick = {
+                            onModeChanged(mode)
+                            modeExpanded = false
+                        }
+                    )
+                }
+            }
         }
 
         // Reorder buttons
