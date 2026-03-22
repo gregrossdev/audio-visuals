@@ -4,10 +4,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Version** | `0.16.1` |
-| **Iteration** | 16 — Layer UX Improvements |
+| **Version** | `0.17.3` |
+| **Iteration** | 17 — Recording & Export |
 | **Status** | `GOVERNED` |
-| **Last Batch** | Layer name mode picker |
+| **Last Batch** | Recording indicator overlay + gitignore |
 | **Last Updated** | 2026-03-22 |
 
 ---
@@ -18,6 +18,9 @@
 
 | Version | Iteration | Batch Title | Type | Status | Timestamp |
 |---------|-------|-------------|------|--------|-----------|
+| 0.17.3 | 17 | Recording indicator overlay + gitignore | PLANNED | done | 2026-03-22 |
+| 0.17.2 | 17 | Record button + R shortcut | PLANNED | done | 2026-03-22 |
+| 0.17.1 | 17 | ScreenRecorder utility class | PLANNED | done | 2026-03-22 |
 | 0.16.1 | 16 | Layer name mode picker | PLANNED | done | 2026-03-22 |
 | 0.15.4 | 15 | Keyboard shortcuts + fullscreen | PLANNED | done | 2026-03-22 |
 | 0.15.3 | 15 | Auto-hide control bar | PLANNED | done | 2026-03-22 |
@@ -98,7 +101,7 @@
 
 <!-- Decisions that affect current/upcoming work -->
 
-_None — iteration 16 archived._
+_None — iteration 17 archived._
 
 ---
 

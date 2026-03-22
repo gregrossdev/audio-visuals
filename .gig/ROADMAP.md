@@ -29,14 +29,15 @@
 | 14 | Screenshot Capture | v0.14.1–v0.14.2 | complete |
 | 15 | UI/UX Overhaul | v0.15.1–v0.15.4 | complete |
 | 16 | Layer UX Improvements | v0.16.1 | complete |
+| 17 | Recording & Export | v0.17.1–v0.17.3 | complete |
 <!-- Phases added by gig:plan, archived by gig:verify -->
 
 ## Upcoming Iterations
 
 | # | Name | Description |
 |---|------|-------------|
-| 17 | Recording & Export | Capture video/GIF output of visualizations for sharing |
 | 18 | Fractal Tree Visualizer | Recursive branching trees that bloom and sway on beat |
+| 19 | Help Overlay | Press ? or H to show keyboard shortcut reference overlay |
 
 ## Completed Milestones
 
