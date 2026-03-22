@@ -31,6 +31,7 @@ fun ControlBar(
     onThemeChanged: (ThemePreset) -> Unit,
     isPaused: Boolean,
     onPauseToggle: () -> Unit,
+    onScreenshot: () -> Unit = {},
     settingsOpen: Boolean = false,
     onSettingsToggle: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -107,6 +108,15 @@ fun ControlBar(
             themePreset = themePreset,
             onThemeChanged = onThemeChanged
         )
+
+        // Screenshot button
+        IconButton(onClick = onScreenshot) {
+            Text(
+                text = "\uD83D\uDCF7",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         // Settings gear toggle
         IconButton(onClick = onSettingsToggle) {

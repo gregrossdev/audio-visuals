@@ -1,34 +1,79 @@
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import audio.*
 import ui.*
+import java.awt.Rectangle
+import java.awt.Robot
 import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import javax.imageio.ImageIO
 import javax.sound.sampled.Mixer
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
 
+@OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "Audio Visuals",
-        state = rememberWindowState(width = 1024.dp, height = 600.dp)
+        state = rememberWindowState(width = 1024.dp, height = 600.dp),
+        onKeyEvent = { false }
     ) {
-        App()
+        App(window)
     }
 }
 
+fun takeScreenshot(window: java.awt.Window): String? {
+    return try {
+        val dir = File("screenshots")
+        dir.mkdirs()
+        val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss"))
+        val file = File(dir, "screenshot-$timestamp.png")
+        val robot = Robot()
+        val bounds = window.bounds
+        val capture = robot.createScreenCapture(Rectangle(bounds.x, bounds.y, bounds.width, bounds.height))
+        ImageIO.write(capture, "png", file)
+        file.path
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun App() {
+fun App(window: java.awt.Window) {
+    var screenshotStatus by remember { mutableStateOf<String?>(null) }
+
+    // Clear screenshot status after 3 seconds
+    LaunchedEffect(screenshotStatus) {
+        if (screenshotStatus != null) {
+            kotlinx.coroutines.delay(3000)
+            screenshotStatus = null
+        }
+    }
+
+    val doScreenshot = {
+        val path = takeScreenshot(window)
+        screenshotStatus = if (path != null) "Saved: $path" else "Screenshot failed"
+    }
+
     val audioCapture = remember { AudioCapture() }
     val fileSource = remember { FileAudioSource() }
     val fftProcessor = remember { FFTProcessor() }
@@ -112,6 +157,15 @@ fun App() {
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
+                .onKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown &&
+                        event.key == Key.S &&
+                        event.isMetaPressed
+                    ) {
+                        doScreenshot()
+                        true
+                    } else false
+                }
         ) {
             Box(
                 modifier = Modifier
@@ -166,6 +220,28 @@ fun App() {
                                 PresetManager.delete(name)
                                 presetNames = PresetManager.list()
                             }
+                        )
+                    }
+                }
+
+                // Screenshot status overlay
+                if (screenshotStatus != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text(
+                            text = screenshotStatus ?: "",
+                            fontSize = 13.sp,
+                            color = Color.White,
+                            modifier = Modifier
+                                .background(
+                                    Color.Black.copy(alpha = 0.7f),
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)
+                                )
+                                .padding(horizontal = 16.dp, vertical = 6.dp)
                         )
                     }
                 }
@@ -244,6 +320,7 @@ fun App() {
                     isPaused = !isPaused
                     if (isPaused) activeSource.pause() else activeSource.resume()
                 },
+                onScreenshot = { doScreenshot() },
                 settingsOpen = settingsPanelOpen,
                 onSettingsToggle = { settingsPanelOpen = !settingsPanelOpen },
                 modifier = Modifier

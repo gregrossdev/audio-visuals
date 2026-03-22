@@ -28,3 +28,6 @@ Thumbs.db
 # Gig / Claude
 .gig/
 .claude/
+
+# Screenshots
+screenshots/
