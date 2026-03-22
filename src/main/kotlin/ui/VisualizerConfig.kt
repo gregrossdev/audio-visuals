@@ -114,3 +114,18 @@ data class FlowFieldConfig(
     val turbulenceMax: Float = 0.008f,
     override val label: String = "Flow Field"
 ) : VisualizerConfig()
+
+@Serializable
+@SerialName("terrain")
+data class TerrainConfig(
+    val gridCols: Int = 40,
+    val gridRows: Int = 30,
+    val heightScale: Float = 150f,
+    val noiseScale: Float = 0.05f,
+    val scrollSpeed: Float = 0.02f,
+    val focalLength: Float = 400f,
+    val cameraTilt: Float = 0.5f,
+    val fogStart: Float = 0.3f,
+    val fogEnd: Float = 1.0f,
+    override val label: String = "Terrain"
+) : VisualizerConfig()
