@@ -11,7 +11,7 @@ import javax.sound.sampled.*
 class AudioCapture(
     private val sampleRate: Float = 44100f,
     private val sampleSize: Int = 1024
-) {
+) : AudioSource {
     private val format = AudioFormat(
         AudioFormat.Encoding.PCM_SIGNED,
         sampleRate,
@@ -23,9 +23,9 @@ class AudioCapture(
     )
 
     private val _samples = MutableStateFlow(FloatArray(sampleSize))
-    val samples: StateFlow<FloatArray> = _samples.asStateFlow()
+    override val samples: StateFlow<FloatArray> = _samples.asStateFlow()
 
-    var gain: Float = 1.0f
+    override var gain: Float = 1.0f
 
     private var line: TargetDataLine? = null
     private var captureJob: Job? = null
@@ -53,7 +53,7 @@ class AudioCapture(
         }
     }
 
-    fun stop() {
+    override fun stop() {
         captureJob?.cancel()
         captureJob = null
         line?.stop()
@@ -61,11 +61,11 @@ class AudioCapture(
         line = null
     }
 
-    fun pause() {
+    override fun pause() {
         line?.stop()
     }
 
-    fun resume() {
+    override fun resume() {
         line?.start()
     }
 

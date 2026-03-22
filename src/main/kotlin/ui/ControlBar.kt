@@ -10,15 +10,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import javax.sound.sampled.Mixer
 
+enum class SourceMode { MIC, FILE }
+
 @Composable
 fun ControlBar(
+    sourceMode: SourceMode,
+    onSourceModeChanged: (SourceMode) -> Unit,
     devices: List<Mixer.Info>,
     selectedDevice: Mixer.Info?,
     onDeviceSelected: (Mixer.Info?) -> Unit,
+    fileName: String?,
+    onOpenFile: () -> Unit,
     gain: Float,
     onGainChange: (Float) -> Unit,
+    layerCount: Int,
+    layerSummary: String,
+    logScale: Boolean,
+    onLogScaleChanged: (Boolean) -> Unit,
+    themePreset: ThemePreset,
+    onThemeChanged: (ThemePreset) -> Unit,
     isPaused: Boolean,
     onPauseToggle: () -> Unit,
+    settingsOpen: Boolean = false,
+    onSettingsToggle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -26,15 +40,32 @@ fun ControlBar(
             .fillMaxWidth()
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Device dropdown
-        DeviceSelector(
-            devices = devices,
-            selectedDevice = selectedDevice,
-            onDeviceSelected = onDeviceSelected,
-            modifier = Modifier.weight(1f)
+        // Source mode toggle
+        SourceModeToggle(
+            sourceMode = sourceMode,
+            onSourceModeChanged = onSourceModeChanged
         )
+
+        // Source-specific controls
+        when (sourceMode) {
+            SourceMode.MIC -> {
+                DeviceSelector(
+                    devices = devices,
+                    selectedDevice = selectedDevice,
+                    onDeviceSelected = onDeviceSelected,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            SourceMode.FILE -> {
+                FileSelector(
+                    fileName = fileName,
+                    onOpenFile = onOpenFile,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
 
         // Gain slider
         GainSlider(
@@ -43,6 +74,50 @@ fun ControlBar(
             modifier = Modifier.weight(1f)
         )
 
+        // Layer indicator
+        FilledTonalButton(
+            onClick = onSettingsToggle,
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+            modifier = Modifier.height(32.dp)
+        ) {
+            Text(layerSummary, fontSize = 11.sp)
+        }
+
+        // Log scale toggle
+        FilledTonalButton(
+            onClick = { onLogScaleChanged(!logScale) },
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = if (logScale) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (logScale) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+            modifier = Modifier.height(32.dp)
+        ) {
+            Text("Log", fontSize = 11.sp)
+        }
+
+        // Theme selector
+        ThemeSelector(
+            themePreset = themePreset,
+            onThemeChanged = onThemeChanged
+        )
+
+        // Settings gear toggle
+        IconButton(onClick = onSettingsToggle) {
+            Text(
+                text = "\u2699",
+                fontSize = 18.sp,
+                color = if (settingsOpen) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
         // Pause/Resume toggle
         IconButton(onClick = onPauseToggle) {
             Text(
@@ -50,6 +125,66 @@ fun ControlBar(
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.primary
             )
+        }
+    }
+}
+
+@Composable
+private fun SourceModeToggle(
+    sourceMode: SourceMode,
+    onSourceModeChanged: (SourceMode) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+        SourceMode.entries.forEach { mode ->
+            val selected = mode == sourceMode
+            FilledTonalButton(
+                onClick = { onSourceModeChanged(mode) },
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = if (selected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (selected) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                modifier = Modifier.height(32.dp)
+            ) {
+                Text(
+                    text = if (mode == SourceMode.MIC) "Mic" else "File",
+                    fontSize = 11.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FileSelector(
+    fileName: String?,
+    onOpenFile: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = fileName ?: "No file selected",
+            fontSize = 12.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        OutlinedButton(
+            onClick = onOpenFile,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+            modifier = Modifier.height(32.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Text("Open", fontSize = 11.sp)
         }
     }
 }
@@ -95,6 +230,50 @@ private fun DeviceSelector(
                     text = { Text(device.name, fontSize = 12.sp) },
                     onClick = {
                         onDeviceSelected(device)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeSelector(
+    themePreset: ThemePreset,
+    onThemeChanged: (ThemePreset) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        FilledTonalButton(
+            onClick = { expanded = true },
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+            modifier = Modifier.height(32.dp)
+        ) {
+            Text(themePreset.label, fontSize = 11.sp)
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            ThemePreset.entries.forEach { preset ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            preset.label,
+                            fontSize = 12.sp,
+                            color = if (preset == themePreset) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    onClick = {
+                        onThemeChanged(preset)
                         expanded = false
                     }
                 )

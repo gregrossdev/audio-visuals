@@ -24,3 +24,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Gig / Claude
+.gig/
+.claude/

@@ -23,13 +23,23 @@ class FFTProcessor(
     private val _magnitudes = MutableStateFlow(FloatArray(magnitudeBins))
     val magnitudes: StateFlow<FloatArray> = _magnitudes.asStateFlow()
 
+    private val _linearMagnitudes = MutableStateFlow(FloatArray(magnitudeBins))
+    val linearMagnitudes: StateFlow<FloatArray> = _linearMagnitudes.asStateFlow()
+
+    val logBinMapper = LogBinMapper(fftSize)
+    private val _logMagnitudes = MutableStateFlow(FloatArray(logBinMapper.bandCount))
+    val logMagnitudes: StateFlow<FloatArray> = _logMagnitudes.asStateFlow()
+
     private var processJob: Job? = null
 
-    fun start(scope: CoroutineScope, audioCapture: AudioCapture) {
+    fun start(scope: CoroutineScope, source: AudioSource) {
         processJob = scope.launch(Dispatchers.Default) {
-            audioCapture.samples.collect { samples ->
+            source.samples.collect { samples ->
                 if (samples.size >= fftSize) {
-                    _magnitudes.value = processFFT(samples)
+                    val (dbMags, linMags) = processFFT(samples)
+                    _magnitudes.value = dbMags
+                    _linearMagnitudes.value = linMags
+                    _logMagnitudes.value = logBinMapper.map(dbMags)
                 }
             }
         }
@@ -40,7 +50,7 @@ class FFTProcessor(
         processJob = null
     }
 
-    private fun processFFT(samples: FloatArray): FloatArray {
+    private fun processFFT(samples: FloatArray): Pair<FloatArray, FloatArray> {
         // Apply Hann window and convert to double for JTransforms
         val windowed = DoubleArray(fftSize) { i ->
             (samples[i] * hannWindow[i]).toDouble()
@@ -49,17 +59,20 @@ class FFTProcessor(
         // In-place real FFT
         fft.realForward(windowed)
 
-        // Extract magnitudes and convert to dB
-        val result = FloatArray(magnitudeBins)
+        // Extract magnitudes
+        val dbResult = FloatArray(magnitudeBins)
+        val linearResult = FloatArray(magnitudeBins)
         for (i in 0 until magnitudeBins) {
             val real = windowed[2 * i]
             val imag = windowed[2 * i + 1]
-            val magnitude = sqrt(real * real + imag * imag)
+            val magnitude = sqrt(real * real + imag * imag).toFloat()
+
+            linearResult[i] = magnitude
 
             // Convert to dB scale, clamp floor at -80 dB
-            val db = if (magnitude > 0.0) 20.0 * log10(magnitude) else -80.0
-            result[i] = db.coerceIn(-80.0, 0.0).toFloat()
+            val db = if (magnitude > 0f) 20.0 * log10(magnitude.toDouble()) else -80.0
+            dbResult[i] = db.coerceIn(-80.0, 0.0).toFloat()
         }
-        return result
+        return Pair(dbResult, linearResult)
     }
 }
