@@ -1,14 +1,24 @@
 package ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import javax.sound.sampled.Mixer
+import kotlin.math.cos
+import kotlin.math.sin
 
 enum class SourceMode { MIC, FILE }
 
@@ -43,101 +53,243 @@ fun ControlBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Source mode toggle
-        SourceModeToggle(
-            sourceMode = sourceMode,
-            onSourceModeChanged = onSourceModeChanged
-        )
+        // === Source group: SourceModeToggle + DeviceSelector/FileSelector ===
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SourceModeToggle(
+                sourceMode = sourceMode,
+                onSourceModeChanged = onSourceModeChanged
+            )
 
-        // Source-specific controls
-        when (sourceMode) {
-            SourceMode.MIC -> {
-                DeviceSelector(
-                    devices = devices,
-                    selectedDevice = selectedDevice,
-                    onDeviceSelected = onDeviceSelected,
-                    modifier = Modifier.weight(1f)
+            when (sourceMode) {
+                SourceMode.MIC -> {
+                    DeviceSelector(
+                        devices = devices,
+                        selectedDevice = selectedDevice,
+                        onDeviceSelected = onDeviceSelected,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                SourceMode.FILE -> {
+                    FileSelector(
+                        fileName = fileName,
+                        onOpenFile = onOpenFile,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        ControlBarDivider()
+
+        // === Audio group: GainSlider + LogScale toggle ===
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            GainSlider(
+                gain = gain,
+                onGainChange = onGainChange,
+                modifier = Modifier.weight(1f)
+            )
+
+            FilledTonalButton(
+                onClick = { onLogScaleChanged(!logScale) },
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = if (logScale) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (logScale) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                modifier = Modifier.height(32.dp)
+            ) {
+                Text("Log", fontSize = 11.sp)
+            }
+        }
+
+        ControlBarDivider()
+
+        // === Display group: ThemeSelector + LayerSummary + Screenshot + Settings + Pause ===
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ThemeSelector(
+                themePreset = themePreset,
+                onThemeChanged = onThemeChanged
+            )
+
+            FilledTonalButton(
+                onClick = onSettingsToggle,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                modifier = Modifier.height(32.dp)
+            ) {
+                Text(layerSummary, fontSize = 11.sp)
+            }
+
+            // Screenshot button
+            IconButton(onClick = onScreenshot) {
+                CameraIcon(color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            // Settings gear toggle
+            IconButton(onClick = onSettingsToggle) {
+                GearIcon(
+                    color = if (settingsOpen) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            SourceMode.FILE -> {
-                FileSelector(
-                    fileName = fileName,
-                    onOpenFile = onOpenFile,
-                    modifier = Modifier.weight(1f)
-                )
+
+            // Pause/Resume toggle
+            IconButton(onClick = onPauseToggle) {
+                if (isPaused) {
+                    PlayIcon(color = MaterialTheme.colorScheme.primary)
+                } else {
+                    PauseIcon(color = MaterialTheme.colorScheme.primary)
+                }
             }
         }
+    }
+}
 
-        // Gain slider
-        GainSlider(
-            gain = gain,
-            onGainChange = onGainChange,
-            modifier = Modifier.weight(1f)
+// ── Canvas-drawn icons ──────────────────────────────────────────────────────
+
+@Composable
+private fun CameraIcon(color: Color) {
+    Canvas(modifier = Modifier.size(18.dp)) {
+        val w = size.width
+        val h = size.height
+        val stroke = Stroke(width = w * 0.08f, cap = StrokeCap.Round)
+
+        // Camera body: rounded rectangle
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(w * 0.08f, h * 0.28f),
+            size = Size(w * 0.84f, h * 0.58f),
+            cornerRadius = CornerRadius(w * 0.08f),
+            style = stroke
         )
 
-        // Layer indicator
-        FilledTonalButton(
-            onClick = onSettingsToggle,
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-            modifier = Modifier.height(32.dp)
-        ) {
-            Text(layerSummary, fontSize = 11.sp)
+        // Viewfinder bump on top
+        val bumpPath = Path().apply {
+            moveTo(w * 0.30f, h * 0.28f)
+            lineTo(w * 0.36f, h * 0.14f)
+            lineTo(w * 0.64f, h * 0.14f)
+            lineTo(w * 0.70f, h * 0.28f)
         }
+        drawPath(bumpPath, color = color, style = stroke)
 
-        // Log scale toggle
-        FilledTonalButton(
-            onClick = { onLogScaleChanged(!logScale) },
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = if (logScale) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (logScale) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-            modifier = Modifier.height(32.dp)
-        ) {
-            Text("Log", fontSize = 11.sp)
-        }
+        // Lens circle
+        drawCircle(
+            color = color,
+            radius = w * 0.16f,
+            center = Offset(w * 0.50f, h * 0.58f),
+            style = stroke
+        )
+    }
+}
 
-        // Theme selector
-        ThemeSelector(
-            themePreset = themePreset,
-            onThemeChanged = onThemeChanged
+@Composable
+private fun GearIcon(color: Color) {
+    Canvas(modifier = Modifier.size(18.dp)) {
+        val w = size.width
+        val cx = w / 2f
+        val cy = w / 2f
+        val stroke = Stroke(width = w * 0.08f, cap = StrokeCap.Round)
+
+        // Center circle
+        drawCircle(
+            color = color,
+            radius = w * 0.16f,
+            center = Offset(cx, cy),
+            style = stroke
         )
 
-        // Screenshot button
-        IconButton(onClick = onScreenshot) {
-            Text(
-                text = "\uD83D\uDCF7",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        // Settings gear toggle
-        IconButton(onClick = onSettingsToggle) {
-            Text(
-                text = "\u2699",
-                fontSize = 18.sp,
-                color = if (settingsOpen) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        // Pause/Resume toggle
-        IconButton(onClick = onPauseToggle) {
-            Text(
-                text = if (isPaused) "\u25B6" else "\u23F8",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary
+        // Radiating tick marks (8 ticks)
+        val innerR = w * 0.28f
+        val outerR = w * 0.44f
+        for (i in 0 until 8) {
+            val angle = Math.toRadians(i * 45.0)
+            val cosA = cos(angle).toFloat()
+            val sinA = sin(angle).toFloat()
+            drawLine(
+                color = color,
+                start = Offset(cx + innerR * cosA, cy + innerR * sinA),
+                end = Offset(cx + outerR * cosA, cy + outerR * sinA),
+                strokeWidth = w * 0.1f,
+                cap = StrokeCap.Round
             )
         }
     }
 }
+
+@Composable
+private fun PlayIcon(color: Color) {
+    Canvas(modifier = Modifier.size(18.dp)) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            moveTo(w * 0.25f, h * 0.15f)
+            lineTo(w * 0.80f, h * 0.50f)
+            lineTo(w * 0.25f, h * 0.85f)
+            close()
+        }
+        drawPath(path, color = color)
+    }
+}
+
+@Composable
+private fun PauseIcon(color: Color) {
+    Canvas(modifier = Modifier.size(18.dp)) {
+        val w = size.width
+        val h = size.height
+        val barWidth = w * 0.18f
+
+        // Left bar
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(w * 0.22f, h * 0.18f),
+            size = Size(barWidth, h * 0.64f),
+            cornerRadius = CornerRadius(barWidth * 0.3f)
+        )
+        // Right bar
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(w * 0.60f, h * 0.18f),
+            size = Size(barWidth, h * 0.64f),
+            cornerRadius = CornerRadius(barWidth * 0.3f)
+        )
+    }
+}
+
+// ── Vertical divider between groups ─────────────────────────────────────────
+
+@Composable
+private fun ControlBarDivider() {
+    Canvas(
+        modifier = Modifier
+            .width(1.dp)
+            .height(24.dp)
+    ) {
+        drawLine(
+            color = Color.White.copy(alpha = 0.2f),
+            start = Offset(size.width / 2f, 0f),
+            end = Offset(size.width / 2f, size.height),
+            strokeWidth = size.width
+        )
+    }
+}
+
+// ── Existing sub-components (unchanged) ─────────────────────────────────────
 
 @Composable
 private fun SourceModeToggle(
