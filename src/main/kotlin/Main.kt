@@ -1,3 +1,4 @@
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
@@ -10,6 +11,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
@@ -152,11 +157,40 @@ fun App(window: java.awt.Window) {
         }
     }
 
+    // Auto-hide control bar state
+    var controlBarVisible by remember { mutableStateOf(true) }
+    var lastMouseMove by remember { mutableStateOf(System.currentTimeMillis()) }
+    var containerHeight by remember { mutableStateOf(0) }
+    var pointerY by remember { mutableStateOf(0f) }
+    val density = LocalDensity.current
+    val bottomThresholdPx = with(density) { 80.dp.toPx() }
+
+    // Auto-hide timer: hide after 3 seconds of inactivity
+    LaunchedEffect(lastMouseMove) {
+        kotlinx.coroutines.delay(3000)
+        controlBarVisible = false
+    }
+
     AudioVisualsTheme {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
+                .onGloballyPositioned { containerHeight = it.size.height }
+                .onPointerEvent(PointerEventType.Move) { event ->
+                    val position = event.changes.firstOrNull()?.position
+                    if (position != null) {
+                        pointerY = position.y
+                        lastMouseMove = System.currentTimeMillis()
+                        // Show control bar when mouse is near bottom edge
+                        if (containerHeight > 0 && pointerY > containerHeight - bottomThresholdPx) {
+                            controlBarVisible = true
+                        } else if (!controlBarVisible) {
+                            // Also show briefly on any mouse movement
+                            controlBarVisible = true
+                        }
+                    }
+                }
                 .onKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown &&
                         event.key == Key.S &&
@@ -167,166 +201,168 @@ fun App(window: java.awt.Window) {
                     } else false
                 }
         ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                val activeTheme = themePreset.theme
+            val activeTheme = themePreset.theme
 
-                // Render all enabled layers back-to-front
-                layers.filter { it.enabled }.forEach { layer ->
-                    key(layer.id) {
-                        LayerRenderer(
-                            layer = layer,
-                            magnitudes = magnitudes,
-                            theme = activeTheme,
-                            isBeat = isBeat,
-                            peaks = peaks,
-                            bandFrequencies = bandFrequencies,
-                            audioFeatures = audioFeatures
-                        )
-                    }
-                }
-
-                // Settings panel overlay
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.TopEnd
-                ) {
-                    SettingsPanel(
-                        layers = layers,
-                        selectedLayerId = selectedLayerId,
-                        onLayersChanged = { layers = it },
-                        onSelectedLayerChanged = { selectedLayerId = it },
-                        reactivity = reactivityConfig,
-                        onReactivityChanged = { reactivityConfig = it },
-                        presetNames = presetNames,
-                        onSavePreset = { name ->
-                            PresetManager.save(Preset(name, layers, themePreset, reactivityConfig))
-                            presetNames = PresetManager.list()
-                        },
-                        onLoadPreset = { name ->
-                            val preset = PresetManager.load(name)
-                            if (preset != null) {
-                                layers = preset.layers
-                                themePreset = preset.themePreset
-                                reactivityConfig = preset.reactivity
-                                selectedLayerId = preset.layers.firstOrNull()?.id ?: ""
-                            }
-                        },
-                        onDeletePreset = { name ->
-                            PresetManager.delete(name)
-                            presetNames = PresetManager.list()
-                        },
-                        isVisible = settingsPanelOpen
+            // Render all enabled layers back-to-front (full window)
+            layers.filter { it.enabled }.forEach { layer ->
+                key(layer.id) {
+                    LayerRenderer(
+                        layer = layer,
+                        magnitudes = magnitudes,
+                        theme = activeTheme,
+                        isBeat = isBeat,
+                        peaks = peaks,
+                        bandFrequencies = bandFrequencies,
+                        audioFeatures = audioFeatures
                     )
-                }
-
-                // Screenshot status overlay
-                if (screenshotStatus != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        Text(
-                            text = screenshotStatus ?: "",
-                            fontSize = 13.sp,
-                            color = Color.White,
-                            modifier = Modifier
-                                .background(
-                                    Color.Black.copy(alpha = 0.7f),
-                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)
-                                )
-                                .padding(horizontal = 16.dp, vertical = 6.dp)
-                        )
-                    }
                 }
             }
 
-            ControlBar(
-                sourceMode = sourceMode,
-                onSourceModeChanged = { newMode ->
-                    if (newMode == sourceMode) return@ControlBar
-                    fftProcessor.stop()
-                    activeSource.stop()
-                    isPaused = false
-                    sourceMode = newMode
-                    when (newMode) {
-                        SourceMode.MIC -> {
-                            audioCapture.gain = gain
-                            audioCapture.start(scope, selectedDevice)
-                            fftProcessor.start(scope, audioCapture)
+            // Settings panel overlay
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                SettingsPanel(
+                    layers = layers,
+                    selectedLayerId = selectedLayerId,
+                    onLayersChanged = { layers = it },
+                    onSelectedLayerChanged = { selectedLayerId = it },
+                    reactivity = reactivityConfig,
+                    onReactivityChanged = { reactivityConfig = it },
+                    presetNames = presetNames,
+                    onSavePreset = { name ->
+                        PresetManager.save(Preset(name, layers, themePreset, reactivityConfig))
+                        presetNames = PresetManager.list()
+                    },
+                    onLoadPreset = { name ->
+                        val preset = PresetManager.load(name)
+                        if (preset != null) {
+                            layers = preset.layers.take(5)
+                            themePreset = preset.themePreset
+                            reactivityConfig = preset.reactivity
+                            selectedLayerId = preset.layers.firstOrNull()?.id ?: ""
                         }
-                        SourceMode.FILE -> {
-                            if (selectedFile != null) {
-                                fileSource.gain = gain
-                                fileSource.start(scope, selectedFile!!)
-                                fftProcessor.start(scope, fileSource)
+                    },
+                    onDeletePreset = { name ->
+                        PresetManager.delete(name)
+                        presetNames = PresetManager.list()
+                    },
+                    isVisible = settingsPanelOpen
+                )
+            }
+
+            // Screenshot status overlay
+            if (screenshotStatus != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Text(
+                        text = screenshotStatus ?: "",
+                        fontSize = 13.sp,
+                        color = Color.White,
+                        modifier = Modifier
+                            .background(
+                                Color.Black.copy(alpha = 0.7f),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)
+                            )
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
+                }
+            }
+
+            // Auto-hide control bar at bottom
+            AnimatedVisibility(
+                visible = controlBarVisible,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                ControlBar(
+                    sourceMode = sourceMode,
+                    onSourceModeChanged = { newMode ->
+                        if (newMode == sourceMode) return@ControlBar
+                        fftProcessor.stop()
+                        activeSource.stop()
+                        isPaused = false
+                        sourceMode = newMode
+                        when (newMode) {
+                            SourceMode.MIC -> {
+                                audioCapture.gain = gain
+                                audioCapture.start(scope, selectedDevice)
+                                fftProcessor.start(scope, audioCapture)
+                            }
+                            SourceMode.FILE -> {
+                                if (selectedFile != null) {
+                                    fileSource.gain = gain
+                                    fileSource.start(scope, selectedFile!!)
+                                    fftProcessor.start(scope, fileSource)
+                                }
                             }
                         }
-                    }
-                },
-                devices = devices,
-                selectedDevice = selectedDevice,
-                onDeviceSelected = { device ->
-                    selectedDevice = device
-                    fftProcessor.stop()
-                    audioCapture.stop()
-                    audioCapture.gain = gain
-                    audioCapture.start(scope, device)
-                    fftProcessor.start(scope, audioCapture)
-                },
-                fileName = fileName,
-                onOpenFile = {
-                    val chooser = JFileChooser()
-                    chooser.fileFilter = FileNameExtensionFilter(
-                        "Audio Files (*.wav, *.mp3, *.flac)", "wav", "mp3", "flac"
-                    )
-                    val result = chooser.showOpenDialog(null)
-                    if (result == JFileChooser.APPROVE_OPTION) {
-                        val file = chooser.selectedFile
-                        selectedFile = file
-                        fileName = file.name
+                    },
+                    devices = devices,
+                    selectedDevice = selectedDevice,
+                    onDeviceSelected = { device ->
+                        selectedDevice = device
                         fftProcessor.stop()
-                        fileSource.stop()
-                        if (sourceMode == SourceMode.MIC) {
-                            audioCapture.stop()
-                            sourceMode = SourceMode.FILE
+                        audioCapture.stop()
+                        audioCapture.gain = gain
+                        audioCapture.start(scope, device)
+                        fftProcessor.start(scope, audioCapture)
+                    },
+                    fileName = fileName,
+                    onOpenFile = {
+                        val chooser = JFileChooser()
+                        chooser.fileFilter = FileNameExtensionFilter(
+                            "Audio Files (*.wav, *.mp3, *.flac)", "wav", "mp3", "flac"
+                        )
+                        val result = chooser.showOpenDialog(null)
+                        if (result == JFileChooser.APPROVE_OPTION) {
+                            val file = chooser.selectedFile
+                            selectedFile = file
+                            fileName = file.name
+                            fftProcessor.stop()
+                            fileSource.stop()
+                            if (sourceMode == SourceMode.MIC) {
+                                audioCapture.stop()
+                                sourceMode = SourceMode.FILE
+                            }
+                            isPaused = false
+                            fileSource.gain = gain
+                            fileSource.start(scope, file)
+                            fftProcessor.start(scope, fileSource)
                         }
-                        isPaused = false
-                        fileSource.gain = gain
-                        fileSource.start(scope, file)
-                        fftProcessor.start(scope, fileSource)
-                    }
-                },
-                layerCount = layers.size,
-                layerSummary = if (layers.size == 1) layers.first().vizMode.name.lowercase()
-                    .replaceFirstChar { it.uppercase() } else "${layers.size} layers",
-                logScale = logScale,
-                onLogScaleChanged = { logScale = it },
-                themePreset = themePreset,
-                onThemeChanged = { themePreset = it },
-                gain = gain,
-                onGainChange = { newGain ->
-                    gain = newGain
-                    activeSource.gain = newGain
-                },
-                isPaused = isPaused,
-                onPauseToggle = {
-                    isPaused = !isPaused
-                    if (isPaused) activeSource.pause() else activeSource.resume()
-                },
-                onScreenshot = { doScreenshot() },
-                settingsOpen = settingsPanelOpen,
-                onSettingsToggle = { settingsPanelOpen = !settingsPanelOpen },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .background(MaterialTheme.colorScheme.surface)
-            )
+                    },
+                    layerCount = layers.size,
+                    layerSummary = if (layers.size == 1) layers.first().vizMode.name.lowercase()
+                        .replaceFirstChar { it.uppercase() } else "${layers.size} layers",
+                    logScale = logScale,
+                    onLogScaleChanged = { logScale = it },
+                    themePreset = themePreset,
+                    onThemeChanged = { themePreset = it },
+                    gain = gain,
+                    onGainChange = { newGain ->
+                        gain = newGain
+                        activeSource.gain = newGain
+                    },
+                    isPaused = isPaused,
+                    onPauseToggle = {
+                        isPaused = !isPaused
+                        if (isPaused) activeSource.pause() else activeSource.resume()
+                    },
+                    onScreenshot = { doScreenshot() },
+                    settingsOpen = settingsPanelOpen,
+                    onSettingsToggle = { settingsPanelOpen = !settingsPanelOpen },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .background(Color(0xFF1A1A1A).copy(alpha = 0.9f))
+                )
+            }
         }
     }
 }
