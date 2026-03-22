@@ -325,6 +325,7 @@ private fun LayerConfigSection(layer: VisualizerLayer, onConfigChanged: (Visuali
         is MandalaConfig -> MandalaSettings(config) { onConfigChanged(it) }
         is FlowFieldConfig -> FlowFieldSettings(config) { onConfigChanged(it) }
         is TerrainConfig -> TerrainSettings(config) { onConfigChanged(it) }
+        is CurvesConfig -> CurvesSettings(config) { onConfigChanged(it) }
         else -> {
             Text(
                 "No configurable parameters for this visualizer.",
@@ -345,6 +346,7 @@ fun defaultConfigForMode(mode: VisualizationMode): VisualizerConfig = when (mode
     VisualizationMode.MANDALA -> MandalaConfig()
     VisualizationMode.FLOW_FIELD -> FlowFieldConfig()
     VisualizationMode.TERRAIN -> TerrainConfig()
+    VisualizationMode.CURVES -> CurvesConfig()
 }
 
 @Composable
@@ -639,6 +641,57 @@ private fun TerrainSettings(config: TerrainConfig, onChange: (TerrainConfig) -> 
     }
     LabeledSlider("Fog End", config.fogEnd, 0.3f, 1.0f) {
         onChange(config.copy(fogEnd = it))
+    }
+}
+
+@Composable
+private fun CurvesSettings(config: CurvesConfig, onChange: (CurvesConfig) -> Unit) {
+    SectionHeader("Curves")
+
+    // Curve mode dropdown
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text("Curve Type", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+        var expanded by remember { mutableStateOf(false) }
+        Box {
+            FilledTonalButton(
+                onClick = { expanded = true },
+                contentPadding = PaddingValues(horizontal = 10.dp),
+                modifier = Modifier.height(28.dp)
+            ) {
+                Text(config.curveMode.label, fontSize = 11.sp)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                CurveMode.entries.forEach { mode ->
+                    DropdownMenuItem(
+                        text = { Text(mode.label, fontSize = 12.sp) },
+                        onClick = {
+                            onChange(config.copy(curveMode = mode))
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    LabeledSlider("Points", config.pointCount.toFloat(), 500f, 6000f, isInt = true) {
+        onChange(config.copy(pointCount = it.toInt()))
+    }
+    LabeledSlider("Line Width", config.lineWidth, 0.5f, 4.0f) {
+        onChange(config.copy(lineWidth = it))
+    }
+    LabeledSlider("Trail Fade", config.trailAlpha, 0.01f, 0.2f) {
+        onChange(config.copy(trailAlpha = it))
+    }
+    LabeledSlider("Speed", config.speedMultiplier, 0.2f, 3.0f) {
+        onChange(config.copy(speedMultiplier = it))
+    }
+    LabeledSlider("Color Cycle", config.colorCycleSpeed, 0.1f, 2.0f) {
+        onChange(config.copy(colorCycleSpeed = it))
     }
 }
 

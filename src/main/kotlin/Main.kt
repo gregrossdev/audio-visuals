@@ -332,6 +332,13 @@ fun LayerRenderer(
                 config = layer.config as? TerrainConfig ?: TerrainConfig(),
                 audioFeatures = audioFeatures
             )
+            VisualizationMode.CURVES -> CurvesVisualizer(
+                magnitudes = magnitudes,
+                theme = theme,
+                isBeat = isBeat,
+                config = layer.config as? CurvesConfig ?: CurvesConfig(),
+                audioFeatures = audioFeatures
+            )
         }
     }
 }
