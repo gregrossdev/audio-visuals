@@ -1,5 +1,6 @@
 package ui
 
+import audio.AudioFeatures
 import androidx.compose.ui.graphics.Color
 import kotlinx.serialization.Serializable
 
@@ -32,6 +33,38 @@ data class ColorTheme(
     }
 }
 
+object DynamicColorTheme {
+    private var smoothedCentroid = 0.5f
+    private var smoothedEnergy = 0f
+    private val smoothFactor = 0.08f
+
+    fun compute(audioFeatures: AudioFeatures, isBeat: Boolean): ColorTheme {
+        smoothedCentroid += (audioFeatures.spectralCentroid - smoothedCentroid) * smoothFactor
+        smoothedEnergy += (audioFeatures.energy - smoothedEnergy) * smoothFactor * 2
+
+        // Map centroid to hue: low=warm(0-60), mid=green/cyan(90-200), high=blue/purple(220-300)
+        val baseHue = smoothedCentroid * 300f
+        val hueSpread = 60f + smoothedEnergy * 30f
+
+        // Energy modulates saturation and lightness
+        val sat = 0.7f + smoothedEnergy * 0.3f
+        val lightnessScale = 0.3f + smoothedEnergy * 0.2f
+        val beatBoost = if (isBeat) 0.15f else 0f
+
+        return ColorTheme(
+            hueStart = baseHue,
+            hueEnd = baseHue + hueSpread,
+            saturation = sat.coerceAtMost(1f),
+            peakSaturation = (sat + 0.1f).coerceAtMost(1f),
+            lightnessMin = 0.25f + beatBoost,
+            lightnessScale = lightnessScale + beatBoost,
+            peakLightness = (0.75f + beatBoost).coerceAtMost(0.95f),
+            glowAlpha = 0.2f + smoothedEnergy * 0.1f,
+            backgroundHue = baseHue
+        )
+    }
+}
+
 @Serializable
 enum class ThemePreset(val label: String, val theme: ColorTheme) {
     SPECTRUM("Spectrum", ColorTheme(
@@ -61,5 +94,12 @@ enum class ThemePreset(val label: String, val theme: ColorTheme) {
         lightnessMin = 0.3f, lightnessScale = 0.4f,
         peakLightness = 0.8f, glowAlpha = 0.2f,
         backgroundHue = 20f
+    )),
+    REACTIVE("Reactive", ColorTheme(
+        hueStart = 0f, hueEnd = 270f,
+        saturation = 0.85f, peakSaturation = 0.95f,
+        lightnessMin = 0.3f, lightnessScale = 0.4f,
+        peakLightness = 0.8f, glowAlpha = 0.2f,
+        backgroundHue = 260f
     ))
 }

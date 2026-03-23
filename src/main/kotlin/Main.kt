@@ -288,7 +288,11 @@ fun App(window: java.awt.Window, windowState: WindowState) {
                     }
                 }
         ) {
-            val activeTheme = themePreset.theme
+            val activeTheme = if (themePreset == ThemePreset.REACTIVE) {
+                DynamicColorTheme.compute(audioFeatures, isBeat)
+            } else {
+                themePreset.theme
+            }
 
             // Render all enabled layers back-to-front (full window)
             layers.filter { it.enabled }.forEach { layer ->
