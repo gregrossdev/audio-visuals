@@ -211,6 +211,9 @@ fun SettingsPanel(
         LabeledSlider("Energy Smooth", reactivity.energySmoothing, 0.05f, 0.5f) {
             onReactivityChanged(reactivity.copy(energySmoothing = it))
         }
+        LabeledSlider("Trail Fade", reactivity.trailFade, 0f, 0.15f) {
+            onReactivityChanged(reactivity.copy(trailFade = it))
+        }
     }
     }
 }

@@ -11,7 +11,8 @@ data class ReactivityConfig(
     val smoothingFactor: Float = 1.0f,
     val centroidInfluence: Float = 0.5f,
     val onsetSensitivity: Float = 1.0f,
-    val energySmoothing: Float = 0.15f
+    val energySmoothing: Float = 0.15f,
+    val trailFade: Float = 0f
 ) {
     fun applyBandSensitivity(magnitudes: FloatArray, bandCount: Int): FloatArray {
         if (bassSensitivity == 1.0f && midSensitivity == 1.0f && highSensitivity == 1.0f) {
