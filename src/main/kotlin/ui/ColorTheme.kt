@@ -95,6 +95,20 @@ enum class ThemePreset(val label: String, val theme: ColorTheme) {
         peakLightness = 0.8f, glowAlpha = 0.2f,
         backgroundHue = 20f
     )),
+    OCEAN("Ocean", ColorTheme(
+        hueStart = 180f, hueEnd = 240f,
+        saturation = 0.8f, peakSaturation = 0.9f,
+        lightnessMin = 0.25f, lightnessScale = 0.45f,
+        peakLightness = 0.8f, glowAlpha = 0.2f,
+        backgroundHue = 210f
+    )),
+    FIRE("Fire", ColorTheme(
+        hueStart = 0f, hueEnd = 40f,
+        saturation = 0.95f, peakSaturation = 1.0f,
+        lightnessMin = 0.3f, lightnessScale = 0.4f,
+        peakLightness = 0.85f, glowAlpha = 0.25f,
+        backgroundHue = 10f
+    )),
     REACTIVE("Reactive", ColorTheme(
         hueStart = 0f, hueEnd = 270f,
         saturation = 0.85f, peakSaturation = 0.95f,
