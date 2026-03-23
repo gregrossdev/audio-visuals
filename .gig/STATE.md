@@ -4,10 +4,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Version** | `0.17.3` |
-| **Iteration** | 17 — Recording & Export |
+| **Version** | `0.18.2` |
+| **Iteration** | 18 — Audio-Reactive Color Palettes |
 | **Status** | `GOVERNED` |
-| **Last Batch** | Recording indicator overlay + gitignore |
+| **Last Batch** | OCEAN and FIRE static presets |
 | **Last Updated** | 2026-03-22 |
 
 ---
@@ -18,6 +18,8 @@
 
 | Version | Iteration | Batch Title | Type | Status | Timestamp |
 |---------|-------|-------------|------|--------|-----------|
+| 0.18.2 | 18 | OCEAN and FIRE static presets | PLANNED | done | 2026-03-22 |
+| 0.18.1 | 18 | DynamicColorTheme + REACTIVE preset | PLANNED | done | 2026-03-22 |
 | 0.17.3 | 17 | Recording indicator overlay + gitignore | PLANNED | done | 2026-03-22 |
 | 0.17.2 | 17 | Record button + R shortcut | PLANNED | done | 2026-03-22 |
 | 0.17.1 | 17 | ScreenRecorder utility class | PLANNED | done | 2026-03-22 |
@@ -101,7 +103,7 @@
 
 <!-- Decisions that affect current/upcoming work -->
 
-_None — iteration 17 archived._
+_None — iteration 18 archived._
 
 ---
 

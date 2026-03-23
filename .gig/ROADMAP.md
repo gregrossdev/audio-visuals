@@ -30,6 +30,7 @@
 | 15 | UI/UX Overhaul | v0.15.1–v0.15.4 | complete |
 | 16 | Layer UX Improvements | v0.16.1 | complete |
 | 17 | Recording & Export | v0.17.1–v0.17.3 | complete |
+| 18 | Audio-Reactive Color Palettes | v0.18.1–v0.18.2 | complete |
 <!-- Phases added by gig:plan, archived by gig:verify -->
 
 ## Upcoming Iterations
