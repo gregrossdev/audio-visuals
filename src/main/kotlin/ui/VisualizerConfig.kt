@@ -83,7 +83,7 @@ data class TrailsConfig(
 data class MandalaConfig(
     val rings: Int = 4,
     val elementsPerRing: Int = 12,
-    val shapeType: MandalaShape = MandalaShape.CIRCLE,
+    val detailLevel: Int = 3,
     val innerRotationSpeed: Float = 0.3f,
     val outerRotationSpeed: Float = 0.8f,
     val pulseIntensity: Float = 0.3f,
@@ -91,14 +91,6 @@ data class MandalaConfig(
     val connectionAlpha: Float = 0.4f,
     override val label: String = "Mandala"
 ) : VisualizerConfig()
-
-@Serializable
-enum class MandalaShape(val label: String) {
-    CIRCLE("Circle"),
-    DIAMOND("Diamond"),
-    TRIANGLE("Triangle"),
-    LINE("Line")
-}
 
 @Serializable
 @SerialName("flow_field")
