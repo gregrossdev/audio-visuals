@@ -80,6 +80,7 @@ fun TrailsVisualizer(
         val layers = state.frameCount
         val maxVerticalSpread = h * config.verticalSpread
         val topMargin = h * config.topMargin
+        val waveHeight = h * config.verticalSpread * 0.5f  // config-driven vertical range for wave amplitude
 
         // Draw oldest to newest (back to front)
         for (age in layers - 1 downTo 0) {
@@ -99,7 +100,7 @@ fun TrailsVisualizer(
             val ys = FloatArray(pointCount)
             for (j in 0 until pointCount) {
                 xs[j] = (j.toFloat() / (pointCount - 1)) * w
-                ys[j] = yOffset + (1f - data[j]) * h * 0.25f
+                ys[j] = yOffset + (1f - data[j]) * waveHeight
             }
 
             // Build smooth path via Catmull-Rom
@@ -124,13 +125,13 @@ fun TrailsVisualizer(
             }
 
             // Close path to bottom for fill
-            path.lineTo(w, yOffset + h * 0.25f)
-            path.lineTo(0f, yOffset + h * 0.25f)
+            path.lineTo(w, yOffset + waveHeight)
+            path.lineTo(0f, yOffset + waveHeight)
             path.close()
 
             // Color shifts with age — centroid shifts hue (bass=warm, treble=cool)
             val centroid = audioFeatures?.spectralCentroid ?: 0.5f
-            val centroidHueShift = (centroid - 0.5f) * 60f // shift ±30 degrees based on brightness
+            val centroidHueShift = (centroid - 0.5f) * (theme.hueEnd - theme.hueStart) * 0.3f // proportional shift based on hue range
             val trailEnergy = audioFeatures?.energy ?: energy
             val hueShift = ageFraction * config.hueFadeSpeed
             val colorStops = Array(pointCount) { j ->

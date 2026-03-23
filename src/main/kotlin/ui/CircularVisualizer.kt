@@ -43,15 +43,17 @@ fun CircularVisualizer(magnitudes: FloatArray, theme: ColorTheme, peaks: FloatAr
             )
         }
 
+        val strokeUnit = minDim * 0.003f   // proportional stroke width unit
+
         // Inner circle anchor
         drawCircle(
             color = Color.hsl(theme.backgroundHue, 0.1f, 0.25f),
             radius = baseRadius,
             center = Offset(cx, cy),
-            style = Stroke(width = 1.5f)
+            style = Stroke(width = strokeUnit)
         )
 
-        val step = 2
+        val step = maxOf(1, barCount / 128)
         for (j in 0 until barCount / step) {
             val i = j * step
             val normalized = ((magnitudes[i] + 80f) / 80f).coerceIn(0f, 1f)
@@ -75,7 +77,7 @@ fun CircularVisualizer(magnitudes: FloatArray, theme: ColorTheme, peaks: FloatAr
                 color = color.copy(alpha = theme.glowAlpha),
                 start = Offset(startX, startY),
                 end = Offset(endX, endY),
-                strokeWidth = 4f,
+                strokeWidth = strokeUnit * 2f,
                 blendMode = BlendMode.Screen
             )
 
@@ -84,7 +86,7 @@ fun CircularVisualizer(magnitudes: FloatArray, theme: ColorTheme, peaks: FloatAr
                 color = color,
                 start = Offset(startX, startY),
                 end = Offset(endX, endY),
-                strokeWidth = 2f
+                strokeWidth = strokeUnit
             )
 
             // Peak tick
@@ -93,13 +95,14 @@ fun CircularVisualizer(magnitudes: FloatArray, theme: ColorTheme, peaks: FloatAr
                 if (peakNorm > 0.02f) {
                     val peakLen = peakNorm * maxBarLength
                     val peakR = baseRadius + peakLen
-                    val tickStart = Offset(cx + (peakR - 2f) * cosA, cy + (peakR - 2f) * sinA)
-                    val tickEnd = Offset(cx + (peakR + 2f) * cosA, cy + (peakR + 2f) * sinA)
+                    val tickHalf = minDim * 0.003f
+                    val tickStart = Offset(cx + (peakR - tickHalf) * cosA, cy + (peakR - tickHalf) * sinA)
+                    val tickEnd = Offset(cx + (peakR + tickHalf) * cosA, cy + (peakR + tickHalf) * sinA)
                     drawLine(
                         color = theme.peakColor(i, barCount),
                         start = tickStart,
                         end = tickEnd,
-                        strokeWidth = 1.5f
+                        strokeWidth = strokeUnit
                     )
                 }
             }

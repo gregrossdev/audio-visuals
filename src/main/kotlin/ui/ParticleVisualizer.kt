@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.sin
 import audio.AudioFeatures
 import kotlin.random.Random
@@ -63,6 +64,9 @@ fun ParticleVisualizer(
         val h = size.height
         val cx = w / 2f
         val cy = h / 2f
+        val minDim = min(w, h)
+        val sizeScale = minDim * 0.003f   // proportional particle size unit
+        val speedScale = minDim * 0.003f   // proportional speed unit
         val bandCount = magnitudes.size
         if (bandCount == 0) return@Canvas
 
@@ -111,45 +115,45 @@ fun ParticleVisualizer(
         // Bass: large, slow, low hue
         for (k in 0 until bassSpawn) {
             val angle = Random.nextFloat() * Math.PI.toFloat() * 2f
-            pool.spawn(cx, cy, speed = config.bassSpeedMin + bassEnergy * config.bassSpeedScale, angle = angle,
-                hue = theme.hueStart, size = (config.bassSizeMin + bassEnergy * config.bassSizeScale) * energyScale)
+            pool.spawn(cx, cy, speed = (config.bassSpeedMin + bassEnergy * config.bassSpeedScale) * speedScale, angle = angle,
+                hue = theme.hueStart, size = (config.bassSizeMin + bassEnergy * config.bassSizeScale) * sizeScale * energyScale)
         }
         // Sub-bass onset burst — big particles
         if (onsets?.subBass == true) {
             for (k in 0 until config.beatBurstCount / 2) {
                 val angle = Random.nextFloat() * Math.PI.toFloat() * 2f
-                pool.spawn(cx, cy, speed = 2f + Random.nextFloat() * 3f, angle = angle,
-                    hue = theme.hueStart, size = (6f + Random.nextFloat() * 4f) * energyScale)
+                pool.spawn(cx, cy, speed = (2f + Random.nextFloat() * 3f) * speedScale, angle = angle,
+                    hue = theme.hueStart, size = (6f + Random.nextFloat() * 4f) * sizeScale * energyScale)
             }
         }
         // Mids: medium
         for (k in 0 until midSpawn) {
             val angle = Random.nextFloat() * Math.PI.toFloat() * 2f
             val midHue = theme.hueStart + (theme.hueEnd - theme.hueStart) * 0.5f
-            pool.spawn(cx, cy, speed = config.midSpeedMin + midEnergy * config.midSpeedScale, angle = angle,
-                hue = midHue, size = (config.midSizeMin + midEnergy * config.midSizeScale) * energyScale)
+            pool.spawn(cx, cy, speed = (config.midSpeedMin + midEnergy * config.midSpeedScale) * speedScale, angle = angle,
+                hue = midHue, size = (config.midSizeMin + midEnergy * config.midSizeScale) * sizeScale * energyScale)
         }
         // Mids onset burst
         if (onsets?.mids == true) {
             for (k in 0 until config.beatBurstCount / 3) {
                 val angle = Random.nextFloat() * Math.PI.toFloat() * 2f
                 val midHue = theme.hueStart + (theme.hueEnd - theme.hueStart) * 0.5f
-                pool.spawn(cx, cy, speed = 2f + Random.nextFloat() * 4f, angle = angle,
-                    hue = midHue, size = (3f + Random.nextFloat() * 3f) * energyScale)
+                pool.spawn(cx, cy, speed = (2f + Random.nextFloat() * 4f) * speedScale, angle = angle,
+                    hue = midHue, size = (3f + Random.nextFloat() * 3f) * sizeScale * energyScale)
             }
         }
         // Highs: small, fast, high hue
         for (k in 0 until highSpawn) {
             val angle = Random.nextFloat() * Math.PI.toFloat() * 2f
-            pool.spawn(cx, cy, speed = config.highSpeedMin + highEnergy * config.highSpeedScale, angle = angle,
-                hue = theme.hueEnd, size = (config.highSizeMin + highEnergy * config.highSizeScale) * energyScale)
+            pool.spawn(cx, cy, speed = (config.highSpeedMin + highEnergy * config.highSpeedScale) * speedScale, angle = angle,
+                hue = theme.hueEnd, size = (config.highSizeMin + highEnergy * config.highSizeScale) * sizeScale * energyScale)
         }
         // Highs onset — sparkles
         if (onsets?.highs == true) {
             for (k in 0 until config.beatBurstCount / 4) {
                 val angle = Random.nextFloat() * Math.PI.toFloat() * 2f
-                pool.spawn(cx, cy, speed = 4f + Random.nextFloat() * 6f, angle = angle,
-                    hue = theme.hueEnd, size = 1.5f + Random.nextFloat() * 2f)
+                pool.spawn(cx, cy, speed = (4f + Random.nextFloat() * 6f) * speedScale, angle = angle,
+                    hue = theme.hueEnd, size = (1.5f + Random.nextFloat() * 2f) * sizeScale)
             }
         }
 
@@ -158,8 +162,8 @@ fun ParticleVisualizer(
             for (k in 0 until config.beatBurstCount) {
                 val angle = Random.nextFloat() * Math.PI.toFloat() * 2f
                 val burstHue = theme.hueStart + Random.nextFloat() * (theme.hueEnd - theme.hueStart)
-                pool.spawn(cx, cy, speed = 3f + Random.nextFloat() * 5f, angle = angle,
-                    hue = burstHue, size = (4f + Random.nextFloat() * 5f) * energyScale)
+                pool.spawn(cx, cy, speed = (3f + Random.nextFloat() * 5f) * speedScale, angle = angle,
+                    hue = burstHue, size = (4f + Random.nextFloat() * 5f) * sizeScale * energyScale)
             }
         }
 
@@ -183,7 +187,9 @@ fun ParticleVisualizer(
             }
 
             // Off-screen check
-            if (p.x < -50f || p.x > w + 50f || p.y < -50f || p.y > h + 50f) {
+            val marginX = w * 0.05f
+            val marginY = h * 0.05f
+            if (p.x < -marginX || p.x > w + marginX || p.y < -marginY || p.y > h + marginY) {
                 p.alive = false
                 continue
             }
