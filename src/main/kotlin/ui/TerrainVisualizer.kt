@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import kotlin.math.min
 import audio.AudioFeatures
 import audio.OpenSimplex2
 
@@ -72,10 +73,12 @@ fun TerrainVisualizer(
         if (isBeatEvent) state.beatPulse = 0.3f
         if (state.beatPulse > 0f) state.beatPulse *= 0.9f
 
+        val minDim = min(w, h)
         val centerX = w / 2f
         val centerY = h * 0.75f // Camera looks slightly downward
         val rowSpacing = 1.0
         val colSpacing = w / (cols - 1).toFloat()
+        val strokeUnit = minDim * 0.002f   // proportional stroke width unit
 
         // Compute heights and project to screen (D-12.1, D-12.3)
         for (row in 0 until rows) {
@@ -86,7 +89,7 @@ fun TerrainVisualizer(
 
                 // World X centered on 0
                 val worldXNorm = (col.toFloat() / (cols - 1).toFloat()) - 0.5f
-                val worldX = worldXNorm * 10f
+                val worldX = worldXNorm * (w / 100f)
 
                 // Base height from noise
                 var height = OpenSimplex2.noise3_ImproveXY(
@@ -118,10 +121,11 @@ fun TerrainVisualizer(
 
                 // Perspective projection (D-12.1)
                 val depth = (rows - row).toFloat() // Far rows have higher depth
-                val depthFactor = config.focalLength / (depth * 8f + config.focalLength)
+                val scaledFocal = config.focalLength * (minDim / 600f)
+                val depthFactor = scaledFocal / (depth * (minDim * 0.013f) + scaledFocal)
 
                 screenXArr[idx] = centerX + worldXNorm * w * 0.8f * depthFactor
-                screenYArr[idx] = centerY - depth * 12f * depthFactor - height * depthFactor * config.cameraTilt
+                screenYArr[idx] = centerY - depth * (h * 0.016f) * depthFactor - height * depthFactor * config.cameraTilt
             }
         }
 
@@ -160,7 +164,7 @@ fun TerrainVisualizer(
                             color = color.copy(alpha = alpha * theme.glowAlpha * 0.4f),
                             start = Offset(sx, sy),
                             end = Offset(nextSx, nextSy),
-                            strokeWidth = 3f,
+                            strokeWidth = strokeUnit * 2.5f,
                             cap = StrokeCap.Round,
                             blendMode = BlendMode.Screen
                         )
@@ -170,7 +174,7 @@ fun TerrainVisualizer(
                         color = color.copy(alpha = alpha),
                         start = Offset(sx, sy),
                         end = Offset(nextSx, nextSy),
-                        strokeWidth = 1.2f,
+                        strokeWidth = strokeUnit,
                         cap = StrokeCap.Round
                     )
                 }
@@ -191,7 +195,7 @@ fun TerrainVisualizer(
                             color = color.copy(alpha = depthAlpha),
                             start = Offset(sx, sy),
                             end = Offset(nextRowSx, nextRowSy),
-                            strokeWidth = 0.8f,
+                            strokeWidth = strokeUnit * 0.65f,
                             cap = StrokeCap.Round
                         )
                     }
