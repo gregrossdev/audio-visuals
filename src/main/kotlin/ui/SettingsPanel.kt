@@ -211,6 +211,9 @@ fun SettingsPanel(
         LabeledSlider("Energy Smooth", reactivity.energySmoothing, 0.05f, 0.5f) {
             onReactivityChanged(reactivity.copy(energySmoothing = it))
         }
+        LabeledSlider("Trail Fade", reactivity.trailFade, 0f, 0.15f) {
+            onReactivityChanged(reactivity.copy(trailFade = it))
+        }
     }
     }
 }
@@ -544,37 +547,9 @@ private fun MandalaSettings(config: MandalaConfig, onChange: (MandalaConfig) -> 
     LabeledSlider("Elements/Ring", config.elementsPerRing.toFloat(), 4f, 32f, isInt = true) {
         onChange(config.copy(elementsPerRing = it.toInt()))
     }
-
-    // Shape type dropdown
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text("Shape", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-        var expanded by remember { mutableStateOf(false) }
-        Box {
-            FilledTonalButton(
-                onClick = { expanded = true },
-                contentPadding = PaddingValues(horizontal = 10.dp),
-                modifier = Modifier.height(28.dp)
-            ) {
-                Text(config.shapeType.label, fontSize = 11.sp)
-            }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                MandalaShape.entries.forEach { shape ->
-                    DropdownMenuItem(
-                        text = { Text(shape.label, fontSize = 12.sp) },
-                        onClick = {
-                            onChange(config.copy(shapeType = shape))
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
+    LabeledSlider("Detail", config.detailLevel.toFloat(), 1f, 4f, isInt = true) {
+        onChange(config.copy(detailLevel = it.toInt()))
     }
-
     LabeledSlider("Inner Speed", config.innerRotationSpeed, 0f, 2.0f) {
         onChange(config.copy(innerRotationSpeed = it))
     }

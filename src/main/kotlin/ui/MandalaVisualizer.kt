@@ -9,17 +9,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import audio.AudioFeatures
-import kotlin.math.cos
-import kotlin.math.min
-import kotlin.math.sin
+import kotlin.math.*
 
-private class MandalaState(rings: Int) {
-    val ringAngles = FloatArray(rings)
+private class MandalaState {
+    var rotation = 0f
     var pulseScale = 1f
+    var directionMultiplier = 1f
+    var smoothedHighs = 0f
+    var smoothedBass = 0f
+    var smoothedMids = 0f
+    var smoothedCentroid = 0.5f
 }
 
 @Composable
@@ -31,7 +34,7 @@ fun MandalaVisualizer(
     audioFeatures: AudioFeatures? = null,
     modifier: Modifier = Modifier
 ) {
-    val state = remember(config.rings) { MandalaState(config.rings) }
+    val state = remember { MandalaState() }
 
     Canvas(modifier = modifier.fillMaxSize()) {
         val w = size.width
@@ -42,21 +45,40 @@ fun MandalaVisualizer(
         val bandCount = magnitudes.size
         if (bandCount == 0) return@Canvas
 
-        // Compute overall and per-band energy
-        val energy = magnitudes.map { ((it + 80f) / 80f).coerceIn(0f, 1f) }.average().toFloat()
-        val bandEnergies = FloatArray(config.rings) { ring ->
-            val bandStart = (ring.toFloat() / config.rings * bandCount).toInt()
-            val bandEnd = ((ring + 1).toFloat() / config.rings * bandCount).toInt().coerceAtMost(bandCount)
-            var sum = 0f
-            var count = 0
-            for (i in bandStart until bandEnd) {
-                sum += ((magnitudes[i] + 80f) / 80f).coerceIn(0f, 1f)
-                count++
-            }
-            if (count > 0) sum / count else 0f
+        // --- Audio smoothing ---
+        val bass = audioFeatures?.bandEnergies?.bass ?: run {
+            magnitudes.take(bandCount / 4).map { ((it + 80f) / 80f).coerceIn(0f, 1f) }
+                .average().toFloat()
+        }
+        val mids = audioFeatures?.bandEnergies?.mids ?: run {
+            magnitudes.drop(bandCount / 4).take(bandCount / 2).map { ((it + 80f) / 80f).coerceIn(0f, 1f) }
+                .average().toFloat()
+        }
+        val highs = audioFeatures?.bandEnergies?.highs ?: run {
+            magnitudes.drop(bandCount * 3 / 4).map { ((it + 80f) / 80f).coerceIn(0f, 1f) }
+                .average().toFloat()
+        }
+        val centroid = audioFeatures?.spectralCentroid ?: 0.5f
+
+        state.smoothedBass += (bass - state.smoothedBass) * 0.1f
+        state.smoothedMids += (mids - state.smoothedMids) * 0.1f
+        state.smoothedHighs += (highs - state.smoothedHighs) * 0.08f
+        state.smoothedCentroid += (centroid - state.smoothedCentroid) * 0.05f
+
+        // Beat direction flip
+        if (isBeat) {
+            state.directionMultiplier = -state.directionMultiplier
         }
 
-        // Reactive background
+        // Pulse scale from bass
+        state.pulseScale = 0.9f + state.smoothedBass * 0.3f * config.pulseIntensity
+
+        // Rotation update
+        state.rotation += config.innerRotationSpeed * state.directionMultiplier *
+                (0.5f + state.smoothedMids)
+
+        // --- Reactive background ---
+        val energy = (state.smoothedBass + state.smoothedMids + state.smoothedHighs) / 3f
         val bgAlpha = (energy * 0.25f).coerceIn(0f, 0.25f)
         if (bgAlpha > 0.01f) {
             drawCircle(
@@ -73,135 +95,207 @@ fun MandalaVisualizer(
             )
         }
 
-        // Beat pulse — driven by energy envelope when available
-        val pulseEnergy = audioFeatures?.energy ?: energy
-        val targetPulse = if (isBeat) 1f + config.pulseIntensity * (0.5f + pulseEnergy) else 1f
-        state.pulseScale += (targetPulse - state.pulseScale) * 0.2f
+        // --- Compute hue offset from centroid ---
+        val hueOffset = state.smoothedCentroid * 60f
 
-        // Ring spacing
-        val innerRadius = minDim * 0.08f
-        val outerRadius = minDim * 0.42f
-        val ringSpacing = if (config.rings > 1) (outerRadius - innerRadius) / (config.rings - 1) else 0f
+        // --- Flower of Life circle centers ---
+        val baseR = minDim * 0.12f * state.pulseScale
+        val allCenters = mutableListOf<Pair<Offset, Int>>() // center, ring level
 
-        // Per-band energy from AudioFeatures for ring scaling
-        val featureBandEnergies = audioFeatures?.bandEnergies
+        // Ring 0: center circle
+        allCenters.add(Pair(Offset(cx, cy), 0))
 
-        for (ring in 0 until config.rings) {
-            val ringEnergy = bandEnergies[ring]
-            // Scale ring radius using musically accurate band energies
-            val bandScale = when {
-                featureBandEnergies == null -> 1f
-                ring < config.rings / 4 -> 0.8f + featureBandEnergies.subBass * 0.4f
-                ring < config.rings / 2 -> 0.8f + featureBandEnergies.bass * 0.4f
-                ring < config.rings * 3 / 4 -> 0.8f + featureBandEnergies.mids * 0.4f
-                else -> 0.8f + featureBandEnergies.highs * 0.4f
+        // Build Flower of Life rings
+        // Each ring n places circles at distance n*R from center at specific angles
+        // Ring 1: 6 circles at 60deg intervals, distance R
+        // Ring 2: 12 circles (6 at distance 2R at 30deg offsets, 6 at distance R*sqrt(3) at 60deg)
+        // General approach: use hex grid positions
+        val ringCentersSet = mutableSetOf<Long>() // quantized positions for dedup
+        fun quantize(offset: Offset): Long {
+            val qx = (offset.x * 10f).toLong()
+            val qy = (offset.y * 10f).toLong()
+            return qx * 100000L + qy
+        }
+        ringCentersSet.add(quantize(Offset(cx, cy)))
+
+        val maxRings = config.rings.coerceIn(1, 8)
+        for (ring in 1..maxRings) {
+            // Hex grid ring: walk around the hexagonal ring at distance `ring`
+            // A hex ring of radius n has 6*n positions
+            val positions = 6 * ring
+            for (i in 0 until positions) {
+                // Determine hex coordinates using cube coordinate ring walking
+                val side = i / ring        // which of 6 sides (0-5)
+                val offset = i % ring      // position along that side
+
+                // Start direction for each side
+                val startAngle = side * (PI / 3.0)
+                val stepAngle = startAngle + (PI / 3.0)
+
+                // Start point of this side at distance ring*R from center
+                val startX = cx + (ring * baseR * cos(startAngle - PI / 6.0)).toFloat()
+                val startY = cy + (ring * baseR * sin(startAngle - PI / 6.0)).toFloat()
+
+                // Step along this side
+                val dx = (baseR * cos(stepAngle - PI / 6.0)).toFloat()
+                val dy = (baseR * sin(stepAngle - PI / 6.0)).toFloat()
+
+                val px = startX + offset * dx
+                val py = startY + offset * dy
+                val pos = Offset(px, py)
+                val key = quantize(pos)
+                if (key !in ringCentersSet) {
+                    ringCentersSet.add(key)
+                    allCenters.add(Pair(pos, ring))
+                }
             }
-            val ringRadius = (innerRadius + ring * ringSpacing) * bandScale
+        }
 
-            // Update rotation — inner rings slower, outer faster
-            val speedFraction = ring.toFloat() / config.rings.coerceAtLeast(1)
-            val speed = config.innerRotationSpeed + (config.outerRotationSpeed - config.innerRotationSpeed) * speedFraction
-            val direction = if (ring % 2 == 0) 1f else -1f
-            state.ringAngles[ring] += speed * direction * (0.5f + ringEnergy)
+        // --- Draw Flower of Life ---
+        rotate(degrees = state.rotation, pivot = Offset(cx, cy)) {
+            // Draw circles for each center
+            for ((center, ring) in allCenters) {
+                val ringFraction = ring.toFloat() / maxRings.coerceAtLeast(1)
+                val alphaBase = (1f - ringFraction * 0.6f).coerceIn(0.1f, 1f)
+                val circleAlpha = alphaBase * (0.4f + state.smoothedBass * 0.6f)
 
-            val elements = config.elementsPerRing
-            val angleStep = 360f / elements
-            val ringHueFraction = ring.toFloat() / config.rings
-            val ringColor = theme.barColor(
-                (ringHueFraction * bandCount).toInt().coerceIn(0, bandCount - 1),
-                bandCount,
-                ringEnergy
-            )
+                val circleColor = theme.barColor(
+                    ((ringFraction + hueOffset / 360f) * bandCount).toInt().coerceIn(0, bandCount - 1),
+                    bandCount,
+                    0.5f + state.smoothedMids * 0.5f
+                )
 
-            rotate(degrees = state.ringAngles[ring], pivot = Offset(cx, cy)) {
-                val elementRadius = ringRadius * state.pulseScale
+                // Glow effect on main circles
+                drawCircle(
+                    color = circleColor.copy(alpha = (circleAlpha * theme.glowAlpha * 0.5f).coerceIn(0f, 1f)),
+                    radius = baseR * 1.15f,
+                    center = center,
+                    style = Stroke(width = minDim * 0.004f),
+                    blendMode = BlendMode.Screen
+                )
 
-                // Draw elements
-                for (e in 0 until elements) {
-                    val angle = Math.toRadians((e * angleStep).toDouble())
-                    val ex = cx + elementRadius * cos(angle).toFloat()
-                    val ey = cy + elementRadius * sin(angle).toFloat()
+                // Main circle outline
+                drawCircle(
+                    color = circleColor.copy(alpha = circleAlpha.coerceIn(0f, 1f)),
+                    radius = baseR,
+                    center = center,
+                    style = Stroke(width = minDim * 0.002f + state.smoothedBass * minDim * 0.002f)
+                )
+            }
 
-                    val elementSize = (3f + ringEnergy * minDim * 0.02f) * state.pulseScale
-                    val elementAlpha = (0.4f + ringEnergy * 0.6f).coerceIn(0f, 1f)
+            // --- Recursive fractal detail at each circle center ---
+            val effectiveDetail = (state.smoothedHighs * config.detailLevel).coerceIn(0.5f, config.detailLevel.toFloat()).toInt().coerceIn(1, 4)
 
-                    // Glow
-                    drawCircle(
-                        color = ringColor.copy(alpha = elementAlpha * theme.glowAlpha),
-                        radius = elementSize * 2.5f,
-                        center = Offset(ex, ey),
-                        blendMode = BlendMode.Screen
-                    )
+            for ((center, ring) in allCenters) {
+                if (ring == 0) continue // skip center for fractals
 
-                    // Shape
-                    when (config.shapeType) {
-                        MandalaShape.CIRCLE -> {
-                            drawCircle(
-                                color = ringColor.copy(alpha = elementAlpha),
-                                radius = elementSize,
-                                center = Offset(ex, ey)
-                            )
-                        }
-                        MandalaShape.DIAMOND -> {
-                            val path = Path().apply {
-                                moveTo(ex, ey - elementSize)
-                                lineTo(ex + elementSize, ey)
-                                lineTo(ex, ey + elementSize)
-                                lineTo(ex - elementSize, ey)
-                                close()
-                            }
-                            drawPath(path, ringColor.copy(alpha = elementAlpha))
-                        }
-                        MandalaShape.TRIANGLE -> {
-                            val path = Path().apply {
-                                moveTo(ex, ey - elementSize)
-                                lineTo(ex + elementSize * 0.866f, ey + elementSize * 0.5f)
-                                lineTo(ex - elementSize * 0.866f, ey + elementSize * 0.5f)
-                                close()
-                            }
-                            drawPath(path, ringColor.copy(alpha = elementAlpha))
-                        }
-                        MandalaShape.LINE -> {
-                            val lineAngle = Math.atan2(
-                                (ey - cy).toDouble(),
-                                (ex - cx).toDouble()
-                            )
-                            val lx = elementSize * cos(lineAngle).toFloat()
-                            val ly = elementSize * sin(lineAngle).toFloat()
+                val ringFraction = ring.toFloat() / maxRings.coerceAtLeast(1)
+                val fractalColor = theme.barColor(
+                    ((ringFraction + hueOffset / 360f) * bandCount).toInt().coerceIn(0, bandCount - 1),
+                    bandCount,
+                    0.3f + state.smoothedHighs * 0.7f
+                )
+
+                drawFractalDetail(
+                    center = center,
+                    radius = baseR * 0.4f,
+                    depth = effectiveDetail,
+                    maxDepth = effectiveDetail,
+                    color = fractalColor,
+                    minDim = minDim
+                )
+            }
+
+            // --- String-art web connections ---
+            if (config.showConnections && allCenters.size > 1) {
+                val connectionStep = max(2, (6 - state.smoothedMids * 4).toInt())
+                val connectionColor = theme.barColor(
+                    (bandCount / 2),
+                    bandCount,
+                    0.3f + state.smoothedMids * 0.5f
+                ).copy(alpha = (state.smoothedMids * config.connectionAlpha).coerceIn(0f, 0.6f))
+
+                // Connect centers across rings
+                for (i in allCenters.indices) {
+                    if (i % connectionStep != 0) continue
+                    val (c1, ring1) = allCenters[i]
+                    for (j in (i + connectionStep) until allCenters.size step connectionStep) {
+                        val (c2, ring2) = allCenters[j]
+                        // Only connect across different rings
+                        if (ring1 != ring2) {
                             drawLine(
-                                color = ringColor.copy(alpha = elementAlpha),
-                                start = Offset(ex - lx, ey - ly),
-                                end = Offset(ex + lx, ey + ly),
-                                strokeWidth = 2f + ringEnergy * 2f
+                                color = connectionColor,
+                                start = c1,
+                                end = c2,
+                                strokeWidth = minDim * 0.001f
                             )
                         }
-                    }
-
-                    // Connection lines between adjacent elements
-                    if (config.showConnections && elements > 1) {
-                        val nextAngle = Math.toRadians(((e + 1) * angleStep).toDouble())
-                        val nx = cx + elementRadius * cos(nextAngle).toFloat()
-                        val ny = cy + elementRadius * sin(nextAngle).toFloat()
-
-                        drawLine(
-                            color = ringColor.copy(alpha = ringEnergy * config.connectionAlpha),
-                            start = Offset(ex, ey),
-                            end = Offset(nx, ny),
-                            strokeWidth = 1f + ringEnergy
-                        )
                     }
                 }
+            }
 
-                // Ring outline circle
-                if (ringEnergy > 0.1f) {
+            // --- Outer ring rotation effect ---
+            // Draw additional rotating ring outlines at outerRotationSpeed
+            val outerRotAngle = state.rotation * config.outerRotationSpeed / config.innerRotationSpeed.coerceAtLeast(0.01f)
+            rotate(degrees = outerRotAngle - state.rotation, pivot = Offset(cx, cy)) {
+                for (ring in 1..maxRings) {
+                    val ringRadius = ring * baseR
+                    val ringAlpha = (0.15f - ring * 0.02f).coerceIn(0.02f, 0.15f) *
+                            (0.5f + state.smoothedMids * 0.5f)
+                    val ringColor = theme.barColor(
+                        ((ring.toFloat() / maxRings + hueOffset / 360f) * bandCount).toInt().coerceIn(0, bandCount - 1),
+                        bandCount,
+                        0.4f
+                    )
                     drawCircle(
-                        color = ringColor.copy(alpha = ringEnergy * 0.2f),
-                        radius = elementRadius,
+                        color = ringColor.copy(alpha = ringAlpha.coerceIn(0f, 1f)),
+                        radius = ringRadius,
                         center = Offset(cx, cy),
-                        style = Stroke(width = 1f + ringEnergy)
+                        style = Stroke(width = minDim * 0.001f)
                     )
                 }
             }
         }
+    }
+}
+
+/**
+ * Recursively draw smaller circles around a parent center to create fractal detail.
+ */
+private fun DrawScope.drawFractalDetail(
+    center: Offset,
+    radius: Float,
+    depth: Int,
+    maxDepth: Int,
+    color: Color,
+    minDim: Float
+) {
+    if (depth <= 0 || radius < minDim * 0.003f) return
+
+    val alphaScale = (depth.toFloat() / maxDepth).coerceIn(0.1f, 0.8f)
+    val subCount = if (depth > 2) 3 else 6
+
+    for (i in 0 until subCount) {
+        val angle = (i.toFloat() / subCount) * 2f * PI.toFloat()
+        val sx = center.x + radius * cos(angle)
+        val sy = center.y + radius * sin(angle)
+        val subCenter = Offset(sx, sy)
+
+        drawCircle(
+            color = color.copy(alpha = (alphaScale * 0.5f).coerceIn(0f, 1f)),
+            radius = radius,
+            center = subCenter,
+            style = Stroke(width = minDim * 0.001f)
+        )
+
+        // Recurse
+        drawFractalDetail(
+            center = subCenter,
+            radius = radius * 0.4f,
+            depth = depth - 1,
+            maxDepth = maxDepth,
+            color = color,
+            minDim = minDim
+        )
     }
 }

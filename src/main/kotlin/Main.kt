@@ -294,6 +294,16 @@ fun App(window: java.awt.Window, windowState: WindowState) {
                 themePreset.theme
             }
 
+            // Trail/fade overlay — creates motion blur persistence effect
+            if (reactivityConfig.trailFade > 0f) {
+                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawRect(
+                        color = Color.Black.copy(alpha = 1f - reactivityConfig.trailFade),
+                        size = size
+                    )
+                }
+            }
+
             // Render all enabled layers back-to-front (full window)
             layers.filter { it.enabled }.forEach { layer ->
                 key(layer.id) {

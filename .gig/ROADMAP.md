@@ -31,14 +31,16 @@
 | 16 | Layer UX Improvements | v0.16.1 | complete |
 | 17 | Recording & Export | v0.17.1–v0.17.3 | complete |
 | 18 | Audio-Reactive Color Palettes | v0.18.1–v0.18.2 | complete |
+| 19 | Visualizer Quality & Scaling Fixes | v0.19.1–v0.19.4 | complete |
 <!-- Phases added by gig:plan, archived by gig:verify -->
 
 ## Upcoming Iterations
 
 | # | Name | Description |
 |---|------|-------------|
-| 18 | Fractal Tree Visualizer | Recursive branching trees that bloom and sway on beat |
-| 19 | Help Overlay | Press ? or H to show keyboard shortcut reference overlay |
+| 19 | Fractal Tree Visualizer | Recursive branching trees that bloom and sway on beat |
+| 20 | Help Overlay | Press ? or H to show keyboard shortcut reference overlay |
+| 21 | MIDI Input Support | Map MIDI controllers to reactivity sliders and layer parameters |
 
 ## Completed Milestones
 

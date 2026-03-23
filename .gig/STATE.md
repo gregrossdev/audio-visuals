@@ -4,10 +4,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Version** | `0.18.2` |
-| **Iteration** | 18 — Audio-Reactive Color Palettes |
+| **Version** | `0.19.4` |
+| **Iteration** | 19 — Visualizer Quality & Scaling Fixes |
 | **Status** | `GOVERNED` |
-| **Last Batch** | OCEAN and FIRE static presets |
+| **Last Batch** | Trail/fade global option |
 | **Last Updated** | 2026-03-22 |
 
 ---
@@ -103,7 +103,7 @@
 
 <!-- Decisions that affect current/upcoming work -->
 
-_None — iteration 18 archived._
+_None — iteration 19 archived._
 
 ---
 
